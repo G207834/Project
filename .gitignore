@@ -8,3 +8,5 @@ build
 # eide template
 *.ept
 *.eide-template
+#忽略编译文件夹
+project/mrs/obj/
