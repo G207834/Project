@@ -4,7 +4,7 @@ uint8 mt9v03x_image_TwoValues[MT9V03X_H][MT9V03X_W] = {0}; // 二值化后的数
 volatile int Longest_WhiteLie_L[2]                  = {0}; // 左最长白列，[0]白列长度，[1]白列位置，第几列
 volatile int Longest_WhiteLie_R[2]                  = {0}; // 右最长白列，[0]白列长度，[1]白列位置，第几列
 volatile int Search_Stop_Line                       = 0;   // 搜索截止行的长度，要得到坐标用高度减去此值
-volatile int White_Lie[MT9V03X_W]                   = {0}; // 每列的白列长度
+volatile int White_Lie[MT9V03X_W][3]                = {0}; // 0白列长度，1白列起始行数，2白列终止行数
 volatile int L_Line[MT9V03X_H]                      = {0}; // 左边线数组
 volatile int R_Line[MT9V03X_H]                      = {0}; // 右边线数组
 volatile int L_Flag[MT9V03X_H]                      = {0}; // 寻到左边线状态
@@ -28,8 +28,12 @@ extern volatile float Err; // 摄像头误差
 /* 标志位元素 */
 int Straight_Flag = 0; // 直道标志位
 int Island_State  = 0; // 环岛标志位
+int Island_Flag_L = 0; // 环岛标志位
+int Island_Flag_R = 0; // 环岛标志位
 int Ramp_Flag     = 0; // 坡道标志位
 int Cross_Flag    = 0; // 十字标志位
+
+
 
 /* 图像二值化，固定阈值，原图0-255>黑-白,二值图0or255>黑—白*/
 void Image_Change_TwoValues(uint8 value)
@@ -61,31 +65,50 @@ void Image_LongestWhite_SearchLine()
     int lie       = 0; // 列
     /* 从左到右，从下到上遍历数组，记录每列白点数 */
     for (lie = start_lie; lie <= end_lie; lie++) {
-        White_Lie[lie] = 0; // 清零
+        White_Lie[lie][1] = 0;
+        White_Lie[lie][0] = 0;
         for (hang = MT9V03X_H - 1; hang >= 0; hang--) {
-            if (mt9v03x_image_TwoValues[hang][lie] == 0) {
+            if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
+            {
+                if (White_Lie[lie][1] == 0) // 起始点未记录
+                {
+                    break;
+                } else // 否则为终止点
+                {
+                    White_Lie[lie][2] = hang + 1;
+                }
+            } else // 找到的是白点
+            {
+                if (White_Lie[lie][1] == 0) // 起始点未记录
+                {
+                    White_Lie[lie][1] == hang
+                } else // 起始点已记录
+                {
+                    break;
+                }
+            }
+            if (White_Lie[lie][1] != 0 && White_Lie[lie][2] != 0) {
+                White_Lie[lie][0] = White_Lie[lie][1] - White_Lie[lie][2] + 1;
                 break;
-            } else {
-                White_Lie[lie]++;
             }
         }
     }
-    /* 从左到右找左最长白列 */
-    Longest_WhiteLie_L[0] = 0;
-    Longest_WhiteLie_L[1] = 0;
-    for (lie = start_lie; lie <= end_lie; lie++) {
-        if (White_Lie[lie] > Longest_WhiteLie_L[0]) {
-            Longest_WhiteLie_L[0] = White_Lie[lie]; // 记录长度
-            Longest_WhiteLie_L[1] = lie;            // 记录下标
-        }
-    }
-    /* 从右到左找右最长白列 */
+    /* 从左到右找右边最长白列 */
     Longest_WhiteLie_R[0] = 0;
     Longest_WhiteLie_R[1] = 0;
-    for (lie = end_lie; lie >= Longest_WhiteLie_L[1]; lie--) {
-        if (White_Lie[lie] > Longest_WhiteLie_R[0]) {
-            Longest_WhiteLie_R[0] = White_Lie[lie]; // 记录长度
-            Longest_WhiteLie_R[1] = lie;            // 记录下标
+    for (lie = start_lie; lie <= end_lie; lie++) {
+        if (White_Lie[lie][0] > Longest_WhiteLie_R[0] && White_Lie[lie][1] == MT9V03X_H - 1) {
+            Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
+            Longest_WhiteLie_R[1] = lie;               // 记录下标
+        }
+    }
+    /* 从右到左找左边最长白列 */
+    Longest_WhiteLie_L[0] = 0;
+    Longest_WhiteLie_L[1] = 0;
+    for (lie = Longest_WhiteLie_L[1]; lie >= start_lie; lie--) {
+        if (White_Lie[lie][0] > Longest_WhiteLie_L[0] && White_Lie[lie][1] == MT9V03X_H - 1) {
+            Longest_WhiteLie_L[0] = White_Lie[lie]; // 记录长度
+            Longest_WhiteLie_L[1] = lie;            // 记录下标
         }
     }
 
@@ -493,41 +516,3 @@ void Image_Cross_Detect()
     //    ips200_showint(100,13,R_Down_Point);
 }
 
-/*-------------------------------------------------------------------------------------------------------------------
-  @brief     右下角点检测
-  @param     起始点，终止点
-  @return    返回角点所在的行数，找不到返回0
-  Sample     Find_Right_Down_Point(int start,int end);
-  @note      角点检测阈值可根据实际值更改
--------------------------------------------------------------------------------------------------------------------*/
-/* int Find_Right_Down_Point(int start, int end) // 找四个角点，返回值是角点所在的行数
-{
-    int i, t;
-    int right_down_line = 0;
-    if (R_LostLine_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有拐点判断的意义
-        return right_down_line;
-    if (start < end) {
-        t     = start;
-        start = end;
-        end   = t;
-    }
-    if (start >= MT9V03X_H - 1 - 5) // 下面5行数据不稳定，不能作为边界点来判断，舍弃
-        start = MT9V03X_H - 1 - 5;
-    if (end <= MT9V03X_H - Search_Stop_Line)
-        end = MT9V03X_H - Search_Stop_Line;
-    if (end <= 5)
-        end = 5;
-    for (i = start; i >= end; i--) {
-        if (right_down_line == 0 &&                // 只找第一个符合条件的点
-            abs(R_Line[i] - R_Line[i + 1]) <= 5 && // 角点的阈值可以更改
-            abs(R_Line[i + 1] - R_Line[i + 2]) <= 5 &&
-            abs(R_Line[i + 2] - R_Line[i + 3]) <= 5 &&
-            (R_Line[i] - R_Line[i - 2]) <= -5 &&
-            (R_Line[i] - R_Line[i - 3]) <= -10 &&
-            (R_Line[i] - R_Line[i - 4]) <= -10) {
-            right_down_line = i; // 获取行数即可
-            break;
-        }
-    }
-    return right_down_line;
-} */
