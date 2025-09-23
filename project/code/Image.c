@@ -57,7 +57,7 @@ void Image_Change_TwoValues(uint8 value)
 
 void Image_LongestWhite_SearchLine()
 {
-    int start_lie = 20; // 最长白列搜索区间，图像左右减去此长度
+    int start_lie = 10; // 最长白列搜索区间，图像左右减去此长度
     int end_lie   = MT9V03X_W - 1 - start_lie;
     int hang      = 0; // 行
     int lie       = 0; // 列
@@ -65,10 +65,11 @@ void Image_LongestWhite_SearchLine()
     for (lie = start_lie; lie <= end_lie; lie++) {
         White_Lie[lie][1] = 0;
         White_Lie[lie][0] = 0;
+        White_Lie[lie][2] = 0;
         for (hang = MT9V03X_H - 1; hang >= 0; hang--) {
             if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
             {
-                if (White_Lie[lie][1] != 0) // 起始点未记录
+                if (White_Lie[lie][1] != 0) // 起始点已记录
                 {
                     White_Lie[lie][2] = hang + 1;
                 }
@@ -77,6 +78,10 @@ void Image_LongestWhite_SearchLine()
                 if (White_Lie[lie][1] == 0) // 起始点未记录
                 {
                     White_Lie[lie][1] = hang;
+                }
+                if (hang == 0 && White_Lie[lie][2] == 0) // 最上一行，且是白的
+                {
+                    White_Lie[lie][2] = 0;
                 }
             }
             if (White_Lie[lie][1] != 0 && White_Lie[lie][2] != 0) {
@@ -89,7 +94,7 @@ void Image_LongestWhite_SearchLine()
     Longest_WhiteLie_R[0] = 0;
     Longest_WhiteLie_R[1] = 0;
     for (lie = start_lie; lie <= end_lie; lie++) {
-        if (White_Lie[lie][0] > Longest_WhiteLie_R[0] && White_Lie[lie][1] == MT9V03X_H - 1) {
+        if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 5) {
             Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
             Longest_WhiteLie_R[1] = lie;               // 记录下标
         }
@@ -98,22 +103,19 @@ void Image_LongestWhite_SearchLine()
     Longest_WhiteLie_L[0] = 0;
     Longest_WhiteLie_L[1] = 0;
     for (lie = Longest_WhiteLie_R[1]; lie >= start_lie; lie--) {
-        if (White_Lie[lie][0] > Longest_WhiteLie_L[0] && White_Lie[lie][1] == MT9V03X_H - 1) {
+        if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 4) {
             Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
             Longest_WhiteLie_L[1] = lie;               // 记录下标
         }
     }
 
     /* 搜索截止行设为最长白列长度 */
-    Search_Stop_Line = Longest_WhiteLie_L[0];
+    Search_Stop_Line = Longest_WhiteLie_R[0];
 
-    /* 屏幕 */
-    ips200_show_int(0, 0, Search_Stop_Line, 5);
-
-    // for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line; hang--) {
-    for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
+    for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line; hang--) {
+        // for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
         /* 从左最长白列向左寻线 */
-        for (lie = Longest_WhiteLie_L[1]; lie >= 0 + 2; lie--) {
+        for (lie = Longest_WhiteLie_R[1]; lie >= 0 + 2; lie--) {
             if (mt9v03x_image_TwoValues[hang][lie] == 255 && mt9v03x_image_TwoValues[hang][lie - 1] == 0 && mt9v03x_image_TwoValues[hang][lie - 2] == 0) {
                 L_Line[hang] = lie;
                 L_Flag[hang] = 1;
@@ -126,7 +128,7 @@ void Image_LongestWhite_SearchLine()
             }
         }
         /* 从右最长白列向右寻线 */
-        for (lie = Longest_WhiteLie_R[1]; lie <= MT9V03X_W - 1 - 2; lie++) {
+        for (lie = Longest_WhiteLie_L[1]; lie <= MT9V03X_W - 1 - 2; lie++) {
             if (mt9v03x_image_TwoValues[hang][lie] == 255 && mt9v03x_image_TwoValues[hang][lie + 1] == 0 && mt9v03x_image_TwoValues[hang][lie + 2] == 0) {
                 R_Line[hang] = lie;
                 R_Flag[hang] = 1;
@@ -168,6 +170,11 @@ void Image_LongestWhite_SearchLine()
         /* 计算赛道宽度 */
         Road_Wide[hang] = R_Line[hang] - L_Line[hang];
     }
+
+    /* 屏幕 */
+    ips200_show_int(0, 210, Longest_WhiteLie_L[1], 2);
+    ips200_show_int(20, 210, Longest_WhiteLie_R[1], 2);
+    ips200_show_int(40, 210, Search_Stop_Line, 2);
 }
 
 /* 直道检测 */
@@ -258,8 +265,8 @@ void Find_Up_Point(int start, int end)
     if (end <= 5) {
         end = 5;
     }
-    //for (hang = start; hang >= end; hang--) {
-    for (hang = end; hang <= start; hang++) {
+    for (hang = start; hang >= end; hang--) {
+        // for (hang = end; hang <= start; hang++) {
         if (L_Up_Point == 0 &&
             abs(L_Line[hang] - L_Line[hang - 1]) <= 5 &&
             abs(L_Line[hang - 1] - L_Line[hang - 2]) <= 5 &&
@@ -302,7 +309,7 @@ void Image_Show_Boundry(void)
     }
 
     // 在屏幕理论中线处显示红线，用于调整摄像头
-    // ips200_draw_line ( MT9V03X_W/2, MT9V03X_H-10, MT9V03X_W/2, MT9V03X_H, RGB565_RED);
+    ips200_draw_line(MT9V03X_W / 2, MT9V03X_H - 10, MT9V03X_W / 2, MT9V03X_H, RGB565_RED);
 }
 
 void Left_Add_Line(int x1, int y1, int x2, int y2) // 左补线,补的是边界

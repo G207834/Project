@@ -156,6 +156,21 @@ int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值
     }
 }
 
+void Island_Add_Line_R(int start_line, int end_Line, float k) // 补线的起始和截止行
+{
+    k = -1 / k;
+    int hang, t;
+    if (start_line > end_Line) //++访问，确保起始行在上方
+    {
+        t          = start_line;
+        start_line = end_Line;
+        end_Line   = t;
+    }
+    for (hang = start_line; hang <= end_Line; hang++) {
+        R_Line[hang] = (int)R_Line[start_line] + k * (hang - start_line);
+    }
+}
+
 float L_Line_K(int start_line)
 {
     int end_line = start_line + 5;                       // 从起始行向下找五行
@@ -214,20 +229,6 @@ void Image_Island_Dect()
     }
 }
 
-void Island_Add_Line_R(int start_line, int end_Line, float k) // 补线的起始和截止行
-{
-    k = -1 / k;
-    int hang, t;
-    if (start_line > end_Line) //++访问，确保起始行在上方
-    {
-        t          = start_line;
-        start_line = end_Line;
-        end_Line   = t;
-    }
-    for (hang = start_line; hang <= end_Line; hang++) {
-        R_Line[hang] = (int)R_Line[start_line] + k * (hang - start_line);
-    }
-}
 
 void Island_State_3_Search_Line()
 {

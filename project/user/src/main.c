@@ -247,10 +247,9 @@ int main(void)
             Image_Cross_Detect();
             Image_Show_Boundry();
             /* 发送图像到串口 */
-            seekfree_assistant_camera_send();
+            // seekfree_assistant_camera_send();
             /* 屏幕显示总钻风，画幅和摄像头一致 */
-            // ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 240);
-
+            ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 200);
             mt9v03x_finish_flag = 0;
         }
 
