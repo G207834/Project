@@ -235,7 +235,6 @@ int main(void)
     ips200_set_dir(IPS200_CROSSWISE);
     ips200_init(IPS200_TYPE_SPI);
     /* 显示字符串 */
-    ips200_show_string(0, 130, "Test");
 
     uint8 Value = 163;
     // 此处编写用户代码 例如外设初始化代码等

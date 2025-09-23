@@ -33,8 +33,6 @@ int Island_Flag_R = 0; // 环岛标志位
 int Ramp_Flag     = 0; // 坡道标志位
 int Cross_Flag    = 0; // 十字标志位
 
-
-
 /* 图像二值化，固定阈值，原图0-255>黑-白,二值图0or255>黑—白*/
 void Image_Change_TwoValues(uint8 value)
 {
@@ -70,10 +68,7 @@ void Image_LongestWhite_SearchLine()
         for (hang = MT9V03X_H - 1; hang >= 0; hang--) {
             if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
             {
-                if (White_Lie[lie][1] == 0) // 起始点未记录
-                {
-                    break;
-                } else // 否则为终止点
+                if (White_Lie[lie][1] != 0) // 起始点未记录
                 {
                     White_Lie[lie][2] = hang + 1;
                 }
@@ -81,10 +76,7 @@ void Image_LongestWhite_SearchLine()
             {
                 if (White_Lie[lie][1] == 0) // 起始点未记录
                 {
-                    White_Lie[lie][1] == hang
-                } else // 起始点已记录
-                {
-                    break;
+                    White_Lie[lie][1] = hang;
                 }
             }
             if (White_Lie[lie][1] != 0 && White_Lie[lie][2] != 0) {
@@ -105,15 +97,18 @@ void Image_LongestWhite_SearchLine()
     /* 从右到左找左边最长白列 */
     Longest_WhiteLie_L[0] = 0;
     Longest_WhiteLie_L[1] = 0;
-    for (lie = Longest_WhiteLie_L[1]; lie >= start_lie; lie--) {
+    for (lie = Longest_WhiteLie_R[1]; lie >= start_lie; lie--) {
         if (White_Lie[lie][0] > Longest_WhiteLie_L[0] && White_Lie[lie][1] == MT9V03X_H - 1) {
-            Longest_WhiteLie_L[0] = White_Lie[lie]; // 记录长度
-            Longest_WhiteLie_L[1] = lie;            // 记录下标
+            Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
+            Longest_WhiteLie_L[1] = lie;               // 记录下标
         }
     }
 
     /* 搜索截止行设为最长白列长度 */
     Search_Stop_Line = Longest_WhiteLie_L[0];
+
+    /* 屏幕 */
+    ips200_show_int(0, 0, Search_Stop_Line, 5);
 
     // for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line; hang--) {
     for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
@@ -263,15 +258,15 @@ void Find_Up_Point(int start, int end)
     if (end <= 5) {
         end = 5;
     }
-    for (hang = start; hang >= end; hang--) {
-        // for (hang = end; hang <= start; hang++) {
+    //for (hang = start; hang >= end; hang--) {
+    for (hang = end; hang <= start; hang++) {
         if (L_Up_Point == 0 &&
             abs(L_Line[hang] - L_Line[hang - 1]) <= 5 &&
             abs(L_Line[hang - 1] - L_Line[hang - 2]) <= 5 &&
             abs(L_Line[hang - 2] - L_Line[hang - 3]) <= 5 && // 上部撕裂不大
             (L_Line[hang] - L_Line[hang + 2]) >= 5 &&        // 下部撕裂,撕裂阈值可改
-            (L_Line[hang] - L_Line[hang + 3]) >= 8 &&
-            (L_Line[hang] - L_Line[hang + 4]) >= 8) {
+            (L_Line[hang] - L_Line[hang + 3]) >= 10 &&
+            (L_Line[hang] - L_Line[hang + 4]) >= 10) {
             L_Up_Point = hang;
         }
         if (R_Up_Point == 0 &&
@@ -279,8 +274,8 @@ void Find_Up_Point(int start, int end)
             abs(R_Line[hang - 1] - R_Line[hang - 2]) <= 5 &&
             abs(R_Line[hang - 2] - R_Line[hang - 3]) <= 5 && // 上部撕裂不大
             (R_Line[hang] - R_Line[hang + 2]) <= -5 &&       // 下部撕裂，撕裂阈值需要实测
-            (R_Line[hang] - R_Line[hang + 3]) <= -8 &&
-            (R_Line[hang] - R_Line[hang + 4]) <= -8) {
+            (R_Line[hang] - R_Line[hang + 3]) <= -10 &&
+            (R_Line[hang] - R_Line[hang + 4]) <= -10) {
             R_Up_Point = hang;
         }
         if (L_Up_Point != 0 && R_Up_Point != 0) // 两个都找到，退出
@@ -468,7 +463,7 @@ void Image_Cross_Detect()
     {
         L_Up_Point = 0;
         R_Up_Point = 0;
-        if (Both_LostLine_Time >= 0) // 十字必定有双边丢线，在有双边丢线的情况下再开始找角点
+        if (Both_LostLine_Time >= 10) // 十字必定有双边丢线，在有双边丢线的情况下再开始找角点
         {
             Find_Up_Point(MT9V03X_H - 1, 0);
             if (L_Up_Point == 0 && L_Up_Point == 0) // 只要没有同时找到两个上点，直接结束
@@ -515,4 +510,3 @@ void Image_Cross_Detect()
     //    ips200_showint(50,13,L_Down_Point);
     //    ips200_showint(100,13,R_Down_Point);
 }
-
