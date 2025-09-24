@@ -34,6 +34,7 @@
  ********************************************************************************************************************/
 #include "zf_common_headfile.h"
 #include "Image.h"
+#include "Island.h"
 
 // *************************** 例程硬件连接说明 ***************************
 // 使用 type线 连接
@@ -234,17 +235,23 @@ int main(void)
     /* 屏幕初始化 */
     ips200_set_dir(IPS200_CROSSWISE);
     ips200_init(IPS200_TYPE_SPI);
-    /* 显示字符串 */
+
+    key_init(10);
 
     uint8 Value = 163;
+
+    extern int Island_State;
     // 此处编写用户代码 例如外设初始化代码等
     while (1) {
 
         if (mt9v03x_finish_flag) {
             /* 二值化 */
             Image_Change_TwoValues(Value);
-            Image_LongestWhite_SearchLine();
-            Image_Cross_Detect();
+            if (Island_State != 3) {
+                Image_LongestWhite_SearchLine();
+                Image_Cross_Detect();
+            }
+            Image_Island_Dect();
             Image_Show_Boundry();
             /* 发送图像到串口 */
             // seekfree_assistant_camera_send();

@@ -172,9 +172,9 @@ void Image_LongestWhite_SearchLine()
     }
 
     /* 屏幕 */
-    ips200_show_int(0, 210, Longest_WhiteLie_L[1], 2);
+    /* ips200_show_int(0, 210, Longest_WhiteLie_L[1], 2);
     ips200_show_int(20, 210, Longest_WhiteLie_R[1], 2);
-    ips200_show_int(40, 210, Search_Stop_Line, 2);
+    ips200_show_int(40, 210, Search_Stop_Line, 2); */
 }
 
 /* 直道检测 */
@@ -309,7 +309,7 @@ void Image_Show_Boundry(void)
     }
 
     // 在屏幕理论中线处显示红线，用于调整摄像头
-    ips200_draw_line(MT9V03X_W / 2, MT9V03X_H - 10, MT9V03X_W / 2, MT9V03X_H, RGB565_RED);
+    // ips200_draw_line(MT9V03X_W / 2, MT9V03X_H - 10, MT9V03X_W / 2, MT9V03X_H, RGB565_RED);
 }
 
 void Left_Add_Line(int x1, int y1, int x2, int y2) // 左补线,补的是边界

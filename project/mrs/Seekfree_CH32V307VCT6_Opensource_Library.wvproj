@@ -81,9 +81,7 @@
 				"excludeResources": [
 					"${project}/components",
 					"${project}/user",
-					"${project}/Libraries",
-					"${project}/code/Island.c",
-					"${project}/code/Island.h"
+					"${project}/Libraries"
 				],
 				"optimization": {
 					"level": "none",

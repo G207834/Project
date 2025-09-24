@@ -37,8 +37,9 @@ extern int Cross_Flag;    // 十字标志位
 /* 环岛相关 */
 uint8 Continuity_Change_Flag_L = 0; // 连续性断行，连续置零，否则为断行
 uint8 Continuity_Change_Flag_R = 0;
-int Monotonicity_Change_Line_R = 0; // 单调性转变行
-int Right_Down_Line            = 0; // 右下角点所在行
+int Monotonicity_Change_Line_R = 0;   // 单调性转变行
+int Right_Down_Line            = 0;   // 右下角点所在行
+int Island_State3_Point[2]     = {0}; //[0]行，[1]列
 
 extern void Right_Add_Line(int x1, int y1, int x2, int y2);
 
@@ -78,6 +79,7 @@ int Find_Right_Down_Point(int start, int end) // 找四个角点，返回值是�
             break;
         }
     }
+    return 0;
 }
 
 /*-------------------------------------------------------------------------------------------------------------------
@@ -127,8 +129,7 @@ void Continuity_Change(int start_hang, int end_hang)
 int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值是单调性改变点所在的行数
 {
     int i;
-    int Monotonicity_Change_Line_R = 0;
-
+    Monotonicity_Change_Line_R = 0;
     if (R_LostLine_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有单调性判断的意义
         return Monotonicity_Change_Line_R;
     if (start >= MT9V03X_H - 1 - 5) // 数组越界保护
@@ -154,11 +155,12 @@ int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值
             break;
         }
     }
+    return Monotonicity_Change_Line_R;
 }
 
 void Island_Add_Line_R(int start_line, int end_Line, float k) // 补线的起始和截止行
 {
-    k = -1 / k;
+    k = 1 / k;
     int hang, t;
     if (start_line > end_Line) //++访问，确保起始行在上方
     {
@@ -175,6 +177,108 @@ float L_Line_K(int start_line)
 {
     int end_line = start_line + 5;                       // 从起始行向下找五行
     float k      = (float)(end_line - start_line) / 5.0; // 求斜率
+    return k;
+}
+
+/* 环岛状态3巡线函数 */
+void Island_State_3_Search_Line()
+{
+    int start_lie = 20; // 最长白列搜索区间，图像左右减去此长度
+    int end_lie   = MT9V03X_W - 1 - start_lie;
+    int hang      = 0; // 行
+    int lie       = 0; // 列
+    /* 从左到右，从下到上遍历数组，记录每列白点数 */
+    for (lie = start_lie; lie <= end_lie; lie++) {
+        White_Lie[lie][1] = 0;
+        White_Lie[lie][0] = 0;
+        White_Lie[lie][2] = 0;
+        for (hang = MT9V03X_H - 1; hang >= 0; hang--) {
+            if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
+            {
+                if (White_Lie[lie][1] != 0) // 起始点已记录
+                {
+                    White_Lie[lie][2] = hang + 1;
+                }
+            } else // 找到的是白点
+            {
+                if (White_Lie[lie][1] == 0) // 起始点未记录
+                {
+                    White_Lie[lie][1] = hang;
+                }
+                if (hang == 0 && White_Lie[lie][2] == 0) // 最上一行，且是白的
+                {
+                    White_Lie[lie][2] = 0;
+                }
+            }
+
+            if (White_Lie[lie][1] != 0 && White_Lie[lie][2] != 0) {
+                White_Lie[lie][0] = White_Lie[lie][1] - White_Lie[lie][2] + 1;
+                break;
+            }
+        }
+    }
+
+    /* 从左到右找右边最长白列 */
+    /* Longest_WhiteLie_R[0] = 0;
+    Longest_WhiteLie_R[1] = 0;
+    for (lie = start_lie; lie <= end_lie; lie++) {
+        if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 7) {
+            Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
+            Longest_WhiteLie_R[1] = lie;               // 记录下标
+        }
+    } */
+
+    /* 从右最长白列到右找角点 */
+    Island_State3_Point[0] = 0;
+    for (lie = start_lie; lie <= MT9V03X_W - 5; lie++) {
+        if (White_Lie[lie][2] >= Island_State3_Point[0]) {
+            Island_State3_Point[0] = White_Lie[lie][2];
+            Island_State3_Point[1] = lie;
+        }
+    }
+
+    /* 从左到右找右边最长白列 */
+    Longest_WhiteLie_R[0] = 0;
+    Longest_WhiteLie_R[1] = 0;
+    for (lie = Island_State3_Point[1]; lie <= MT9V03X_W - 5; lie++) {
+        if (White_Lie[lie][0] >= Longest_WhiteLie_R[0]) {
+            Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
+            Longest_WhiteLie_R[1] = lie;               // 记录下标
+        }
+    }
+
+    /* 搜索截止行设为最长白列长度 */
+    Search_Stop_Line = Longest_WhiteLie_R[0];
+
+    for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line; hang--) {
+        // for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
+        /* 从左最长白列向左寻线 */
+        for (lie = Longest_WhiteLie_R[1]; lie >= 0 + 2; lie--) {
+            if (mt9v03x_image_TwoValues[hang][lie] == 255 && mt9v03x_image_TwoValues[hang][lie - 1] == 0 && mt9v03x_image_TwoValues[hang][lie - 2] == 0) {
+                L_Line[hang] = lie;
+                L_Flag[hang] = 1;
+                break;
+            } else if (lie <= 2) // 没找到，则把图像边界当做边线
+            {
+                L_Line[hang] = lie;
+                L_Flag[hang] = 0;
+                break;
+            }
+        }
+        /* 从右最长白列向右寻线 */
+        for (lie = Longest_WhiteLie_R[1]; lie <= MT9V03X_W - 1 - 2; lie++) {
+            if (mt9v03x_image_TwoValues[hang][lie] == 255 && mt9v03x_image_TwoValues[hang][lie + 1] == 0 && mt9v03x_image_TwoValues[hang][lie + 2] == 0) {
+                R_Line[hang] = lie;
+                R_Flag[hang] = 1;
+                break;
+            } else if (lie >= MT9V03X_W - 1 - 2) // 没找到，则把图像边界当做边线
+            {
+                R_Line[hang] = lie;
+                R_Flag[hang] = 0;
+                break;
+            }
+        }
+    }
 }
 
 void Image_Island_Dect()
@@ -208,7 +312,7 @@ void Image_Island_Dect()
                 Island_Add_Line_R(Monotonicity_Change_Line_R, MT9V03X_H, L_Line_K(Monotonicity_Change_Line_R)); // 直接拉到最底部
             }
             /* 下方边界消失,进入状态2 */
-            if (Boundry_Start_R < 35) {
+            if (Boundry_Start_R < 60) {
                 Island_State = 2;
             }
         }
@@ -226,44 +330,14 @@ void Image_Island_Dect()
             Island_State = 3;
         }
     } else if (Island_State == 3) {
-    }
-}
-
-
-void Island_State_3_Search_Line()
-{
-    int start_lie = 20; // 最长白列搜索区间，图像左右减去此长度
-    int end_lie   = MT9V03X_W - 1 - start_lie;
-    int hang      = 0; // 行
-    int lie       = 0; // 列
-    /* 从左到右，从下到上遍历数组，记录每列白点数 */
-    for (lie = start_lie; lie <= end_lie; lie++) {
-        White_Lie[lie][1] = 0;
-        White_Lie[lie][0] = 0;
-        for (hang = MT9V03X_H - 1; hang >= 0; hang--) {
-            if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
-            {
-                if (White_Lie[lie][1] == 0) // 起始点未记录
-                {
-                    break;
-                } else // 否则为终止点
-                {
-                    White_Lie[lie][2] = hang + 1;
-                }
-            } else // 找到的是白点
-            {
-                if (White_Lie[lie][1] == 0) // 起始点未记录
-                {
-                    White_Lie[lie][1] == hang;
-                } else // 起始点已记录
-                {
-                    break;
-                }
-            }
+        /* 手动调整标志位 */
+        key_scanner();
+        if (key_get_state(KEY_1) == KEY_SHORT_PRESS) {
+            Island_State  = 0;
+            Island_Flag_R = 0;
         }
-        if (White_Lie[lie][1] != 0 && White_Lie[lie][2] != 0) {
-            White_Lie[lie][0] = White_Lie[lie][1] - White_Lie[lie][2] + 1;
-            break;
-        }
+        Island_State_3_Search_Line();
     }
+    ips200_show_int(0, 210, Island_State, 2);
+    ips200_show_int(40, 210, Island_Flag_R, 2);
 }

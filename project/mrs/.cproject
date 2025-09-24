@@ -280,7 +280,7 @@
             </toolChain>
           </folderInfo>
           <sourceEntries>
-            <entry excluding="components|user|Libraries|code/Island.c|code/Island.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+            <entry excluding="components|user|Libraries" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
           </sourceEntries>
         </configuration>
       </storageModule>
