@@ -280,7 +280,7 @@
             </toolChain>
           </folderInfo>
           <sourceEntries>
-            <entry excluding="components|user|Libraries" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+            <entry excluding="components|user|Libraries|code/icm24688.c|code/icm24688.h" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
           </sourceEntries>
         </configuration>
       </storageModule>

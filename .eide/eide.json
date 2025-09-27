@@ -22,7 +22,8 @@
       "excludeList": [
         "Startup/startup_ch32v30x_D8.S",
         "sdk/Startup/startup_ch32v30x_D8.S",
-        "libraries/zf_device/libzf_device_config.a"
+        "libraries/zf_device/libzf_device_config.a",
+        "project/code/icm24688.c"
       ],
       "toolchain": "RISCV_GCC",
       "compileConfig": {

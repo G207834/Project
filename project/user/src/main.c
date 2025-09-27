@@ -35,6 +35,10 @@
 #include "zf_common_headfile.h"
 #include "Image.h"
 #include "Island.h"
+#include "motor.h"
+#include "Control.h"
+#include "motor.h"
+#include "servo.h"
 
 // *************************** 例程硬件连接说明 ***************************
 // 使用 type线 连接
@@ -239,7 +243,10 @@ int main(void)
     key_init(10);
 
     uint8 Value = 163;
-
+    extern volatile float Err;
+    Encoder_Init();
+    Motor_Init();
+    Servo_Init();
     extern int Island_State;
     // 此处编写用户代码 例如外设初始化代码等
     while (1) {
@@ -252,6 +259,10 @@ int main(void)
                 Image_Cross_Detect();
             }
             Image_Island_Dect();
+            Set_Motor_PWM(10, 10);
+            Err_Sum();
+            Servo_Control(Err);
+            ips200_show_float(80, 210, Err, 2, 4);
             Image_Show_Boundry();
             /* 发送图像到串口 */
             // seekfree_assistant_camera_send();
@@ -263,6 +274,17 @@ int main(void)
         // 此处编写需要循环执行的代码
     }
 }
+
+/* void TIM6_IRQHandler(void)
+{
+    static int a = 0;
+    if (TIM_GetITStatus(TIM6, TIM_IT_Update) != RESET) {
+        a++;
+        ips200_show_int(100, 210, a, 3);
+        Set_Motor_PWM(10, 10);
+        TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
+    }
+} */
 // **************************** 代码区域 ****************************
 
 // *************************** 例程常见问题说明 ***************************

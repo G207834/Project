@@ -2,5 +2,5 @@
 #define __Control_H__
 #include "zf_common_headfile.h"
 
-
+void Err_Sum(void);
 #endif // !Control_H

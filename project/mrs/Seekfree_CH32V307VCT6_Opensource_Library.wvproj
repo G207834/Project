@@ -81,7 +81,9 @@
 				"excludeResources": [
 					"${project}/components",
 					"${project}/user",
-					"${project}/Libraries"
+					"${project}/Libraries",
+					"${project}/code/icm24688.c",
+					"${project}/code/icm24688.h"
 				],
 				"optimization": {
 					"level": "none",

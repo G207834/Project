@@ -1,6 +1,8 @@
 #include "zf_common_headfile.h"
 #include "Island.h"
 
+extern void Left_Add_Line(int x1, int y1, int x2, int y2);
+
 extern uint8 mt9v03x_image_TwoValues[MT9V03X_H][MT9V03X_W]; // 二值化后的数组
 extern volatile int Longest_WhiteLie_L[2];                  // 左最长白列，[0]白列长度，[1]白列位置，第几列
 extern volatile int Longest_WhiteLie_R[2];                  // 右最长白列，[0]白列长度，[1]白列位置，第几列
@@ -231,7 +233,10 @@ void Island_State_3_Search_Line()
     /* 从右最长白列到右找角点 */
     Island_State3_Point[0] = 0;
     for (lie = start_lie; lie <= MT9V03X_W - 5; lie++) {
-        if (White_Lie[lie][2] >= Island_State3_Point[0]) {
+        if (White_Lie[lie][2] - White_Lie[lie - 3][2] >= 6 &&
+            White_Lie[lie][2] - White_Lie[lie - 4][2] >= 8 &&
+            White_Lie[lie][2] - White_Lie[lie + 2][2] >= 4 &&
+            White_Lie[lie][2] - White_Lie[lie + 3][2] >= 6) {
             Island_State3_Point[0] = White_Lie[lie][2];
             Island_State3_Point[1] = lie;
         }
@@ -337,7 +342,24 @@ void Image_Island_Dect()
             Island_Flag_R = 0;
         }
         Island_State_3_Search_Line();
+        Left_Add_Line(Island_State3_Point[1], Island_State3_Point[0], 0, MT9V03X_H);
+        if (Island_State3_Point[0]>=MT9V03X_H-8)
+        {
+            Island_State = 4;
+        }
     }
+    else if (Island_State==4)
+    {
+        /* if(陀螺仪)
+        {
+            Island_State = 5;
+        } */
+    }
+    else if (Island_State==5)
+    {
+        
+    }
+    
     ips200_show_int(0, 210, Island_State, 2);
     ips200_show_int(40, 210, Island_Flag_R, 2);
 }

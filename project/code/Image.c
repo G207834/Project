@@ -112,7 +112,7 @@ void Image_LongestWhite_SearchLine()
     /* 搜索截止行设为最长白列长度 */
     Search_Stop_Line = Longest_WhiteLie_R[0];
 
-    for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line; hang--) {
+    for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line-1; hang--) {
         // for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
         /* 从左最长白列向左寻线 */
         for (lie = Longest_WhiteLie_R[1]; lie >= 0 + 2; lie--) {
