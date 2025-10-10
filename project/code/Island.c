@@ -360,6 +360,6 @@ void Image_Island_Dect()
         
     }
     
-    ips200_show_int(0, 210, Island_State, 2);
-    ips200_show_int(40, 210, Island_Flag_R, 2);
+    /* ips200_show_int(0, 210, Island_State, 2);
+    ips200_show_int(40, 210, Island_Flag_R, 2); */
 }

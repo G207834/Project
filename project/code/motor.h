@@ -3,11 +3,11 @@
 
 /*************************************电机定义部分***************************************************/
 
-#define PWM_L1     (TIM4_PWM_MAP1_CH1_D12)
-#define PWM_L2     (TIM4_PWM_MAP1_CH2_D13)
+#define PWM_L      (TIM4_PWM_MAP1_CH2_D13)
+#define DIR_L      (D12)
 
-#define PWM_R1     (TIM4_PWM_MAP1_CH4_D15)
-#define PWM_R2     (TIM4_PWM_MAP1_CH3_D14)
+#define PWM_R      (TIM4_PWM_MAP1_CH3_D14)
+#define DIR_R      (D15)
 
 #define MotorLimit (0)
 

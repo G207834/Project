@@ -2,7 +2,6 @@
 #include "pid.h"
 #include "motor.h"
 
-
 // 电机参数
 motor motor_R;
 motor motor_L;
@@ -39,15 +38,17 @@ PID_t PID_Motor_L = {
 };
 
 // 简介：左右电机初始化
-//  //参数：无
-//  //返回：无
+// 参数：无
+// 返回：无
 void Motor_Init(void)
 {
-    pwm_init(PWM_L1, 17 * 1000, 0);
-    pwm_init(PWM_L2, 17 * 1000, 0); // PWM 通道初始化频率 17KHz 占空比初始为 0
+    gpio_init(DIR_L, GPO, GPIO_HIGH,
+              GPO_PUSH_PULL);      // GPIO 初始化为输出 默认上拉输出高
+    pwm_init(PWM_L, 17 * 1000, 0); // PWM 通道初始化频率 17KHz 占空比初始为 0
 
-    pwm_init(PWM_R1, 17 * 1000, 0);
-    pwm_init(PWM_R2, 17 * 1000, 0); // PWM 通道初始化频率 17KHz 占空比初始为 0
+    gpio_init(DIR_R, GPO, GPIO_HIGH,
+              GPO_PUSH_PULL);      // GPIO 初始化为输出 默认上拉输出高
+    pwm_init(PWM_R, 17 * 1000, 0); // PWM 通道初始化频率 17KHz 占空比初始为 0
 }
 
 // 简介：设置左右电机的占空比，实现正反转
@@ -55,23 +56,22 @@ void Motor_Init(void)
 // 返回：无
 void Set_Motor_PWM(int32 motorL, int32 motorR)
 {
-    if (motorL >= 0) // 左侧正转
+
+    if (motorL >= 0) // 电机
     {
-        pwm_set_duty(PWM_L1, motorL * (PWM_DUTY_MAX / 100)); // 计算占空比
-        pwm_set_duty(PWM_L2, 0);                             // 同一时间 一个电机只能输出一个 PWM 另一通道保持低电平
-    } else                                                   // 左侧反转
-    {
-        pwm_set_duty(PWM_L1, 0);                                // 同一时间 一个电机只能输出一个 PWM 另一通道保持低电平
-        pwm_set_duty(PWM_L2, (-motorL) * (PWM_DUTY_MAX / 100)); // 计算占空比
+        gpio_high(DIR_L);
+        pwm_set_duty(PWM_L, motorL);
+    } else {
+        gpio_low(DIR_L);
+        // gpio_high(DIR_L);
+        pwm_set_duty(PWM_L, -motorL);
     }
-    if (motorR >= 0) // 左侧正转
-    {
-        pwm_set_duty(PWM_R1, motorR * (PWM_DUTY_MAX / 100)); // 计算占空比
-        pwm_set_duty(PWM_R2, 0);                             // 同一时间 一个电机只能输出一个 PWM 另一通道保持低电平
-    } else                                                   // 左侧反转
-    {
-        pwm_set_duty(PWM_R1, 0);                                // 同一时间 一个电机只能输出一个 PWM 另一通道保持低电平
-        pwm_set_duty(PWM_R2, (-motorR) * (PWM_DUTY_MAX / 100)); // 计算占空比
+    if (motorR >= 0) {
+        gpio_high(DIR_R);
+        pwm_set_duty(PWM_R, motorR);
+    } else {
+        gpio_low(DIR_R);
+        pwm_set_duty(PWM_R, -motorR);
     }
 }
 

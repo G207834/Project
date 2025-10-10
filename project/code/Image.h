@@ -9,5 +9,5 @@ void Image_Change_TwoValues(uint8 value);
 void Image_LongestWhite_SearchLine();
 void Image_Show_Boundry(void);
 void Image_Cross_Detect();
-
+int my_adapt_threshold(uint8 *image, uint16 col, uint16 row);
 #endif // !Image_H_

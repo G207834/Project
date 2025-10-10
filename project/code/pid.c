@@ -27,7 +27,7 @@ float Servo_PD(PID_t *Pid, float get_error)
     if (Pid->Out < Pid->OutMin) {
         Pid->Out = Pid->OutMin;
     }
-    ips200_show_float(150, 210, Pid->Out, 2, 4);
+    //ips200_show_float(150, 210, Pid->Out, 2, 4);
     return Pid->Out;
 }
 
