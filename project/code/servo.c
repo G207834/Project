@@ -2,9 +2,9 @@
 #include "pid.h"
 #include "servo.h"
 PID_t PID_Servo = {
-    .Kp = 1.6,
+    .Kp = 2.56,
     .Ki = 0,   // I
-    .Kd = 0.8, // Ds
+    .Kd = 1.33, // Ds
 
     .OutMax = 70,
     .OutMin = -95,

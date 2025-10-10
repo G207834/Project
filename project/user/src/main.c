@@ -39,6 +39,7 @@
 #include "Control.h"
 #include "motor.h"
 #include "servo.h"
+#include "pid.h"
 
 // *************************** 例程硬件连接说明 ***************************
 // 使用 type线 连接
@@ -157,7 +158,7 @@ int main(void)
     // 逐飞助手初始化 数据传输使用USB CDC
     // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIFI_SPI);
 
-    seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_CUSTOM);
+    // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_CUSTOM);
 
     //  如果要发送图像信息，则务必调用seekfree_assistant_camera_information_config函数进行必要的参数设置
     //  如果需要发送边线则还需调用seekfree_assistant_camera_boundary_config函数设置边线的信息
@@ -257,19 +258,21 @@ int main(void)
     oscilloscope_data.channel_num = 1; */
 
     /* 屏幕初始化 */
-    ips200_set_dir(IPS200_CROSSWISE);
-    ips200_init(IPS200_TYPE_SPI);
+    // ips200_set_dir(IPS200_CROSSWISE);
+    // ips200_init(IPS200_TYPE_SPI);
 
     // key_init(10);
 
     // uint8 Value = 163;
     uint8 Value;
     extern volatile float Err;
+    extern PID_t PID_Servo;
+    extern int Longest_WhiteLie_L[2];
     Encoder_Init();
     Motor_Init();
     Servo_Init();
     extern int Island_State;
-    Set_Motor_PWM(1200, 1200);
+    Set_Motor_PWM(1350, 1350);
     // 此处编写用户代码 例如外设初始化代码等
     while (1) {
         if (mt9v03x_finish_flag) {
@@ -278,16 +281,17 @@ int main(void)
             Image_Change_TwoValues(Value);
             if (Island_State != 3) {
                 Image_LongestWhite_SearchLine();
+                PID_Servo.Kp = 2.56 + 0.00162 * (MT9V03X_H - Longest_WhiteLie_L[0]);
                 Image_Cross_Detect();
             }
             Image_Island_Dect();
             Err_Sum();
             Servo_Control(Err);
-            Image_Show_Boundry();
+            // Image_Show_Boundry();
             /* 发送图像到串口 */
             // seekfree_assistant_camera_send();
             /* 屏幕显示总钻风，画幅和摄像头一致 */
-            ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 200);
+            // ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 200);
             mt9v03x_finish_flag = 0;
         }
 
