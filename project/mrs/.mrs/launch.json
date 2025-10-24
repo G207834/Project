@@ -5,7 +5,7 @@
 			"type": "mrs-debugger",
 			"request": "launch",
 			"name": "Seekfree_CH32V307VCT6_Opensource_Library",
-			"cwd": "e:\\智能车代码\\Project\\project\\mrs",
+			"cwd": "e:\\智能车代码\\新版3.0\\project\\mrs",
 			"openOCDCfg": {
 				"useLocalOpenOCD": true,
 				"executable": "e:/MounRiverStudio/MounRiver_Studio2/resources/app/resources/win32/components/WCH/OpenOCD/OpenOCD/bin/openocd.exe",
@@ -38,8 +38,8 @@
 					"additionalCommands": []
 				},
 				"loadedFiles": {
-					"executableFile": "e:\\智能车代码\\Project\\project\\mrs\\obj\\Seekfree_CH32V307VCT6_Opensource_Library.elf",
-					"symbolFile": "e:\\智能车代码\\Project\\project\\mrs\\obj\\Seekfree_CH32V307VCT6_Opensource_Library.elf",
+					"executableFile": "e:\\智能车代码\\新版3.0\\project\\mrs\\obj\\Seekfree_CH32V307VCT6_Opensource_Library.elf",
+					"symbolFile": "e:\\智能车代码\\新版3.0\\project\\mrs\\obj\\Seekfree_CH32V307VCT6_Opensource_Library.elf",
 					"executableFileOffset": 0,
 					"symbolFileOffset": 0
 				},

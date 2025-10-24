@@ -10,4 +10,8 @@ void Image_LongestWhite_SearchLine();
 void Image_Show_Boundry(void);
 void Image_Cross_Detect();
 int my_adapt_threshold(uint8 *image, uint16 col, uint16 row);
+void Lost_Iamge();
+
+
+extern int LostFlag;
 #endif // !Image_H_

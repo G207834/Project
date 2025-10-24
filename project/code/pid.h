@@ -5,13 +5,15 @@
 typedef struct 
 {   
     float Target;
-     float Actual;
+    float Actual;
     // float Actual1;
 
     float Kp;       //P
     float Ki;       //I
     float Kd;       //D
 
+    float Gkd;      //陀螺仪辅助控制转向的d
+    float Kp2;      //舵机PD控制的
 
     float  Out_p;  //KP输出
     float  Out_i;  //KI输出
@@ -33,7 +35,14 @@ typedef struct
 
 } PID_t;
 
+
+
 #define Pass   (0.9) //不完全微分滤波系数
+
+extern float Kp2out;
+extern float Gkdout;
+extern float out;
+extern float Pout;
 
 float Servo_PD(PID_t *Pid,float get_error);
 float Motor_PID(PID_t *Pid,float get_Actual,float target_Speed);

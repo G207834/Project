@@ -1,40 +1,51 @@
 #include "zf_common_headfile.h"
 #include "pid.h"
 #include "motor.h"
+#include "Control.h"
 
 // 电机参数
 motor motor_R;
 motor motor_L;
 
+float L;
+float R;
+
 /******电机的PID参数******/
+    // .Kp = 0.1,           2.5         6       8           2       2               6       6           6.3     7       7   7
+    // .Ki = 0.15, // I     1.2         3       3.2         0.9     1.1             2.1     3.2         3.2     3.6     4   7
+    // .Kd = 0.01, // D
+
 PID_t PID_Motor_R = {
     .Target = 0,
     .Actual = 0,
 
-    .Kp = 0,
-    .Ki = 0, // I
+    .Kp = 7.2,
+    .Ki = 4, // I
     .Kd = 0, // D
 
-    .OutMax = 0,
-    .OutMin = 0,
+    .OutMax = 4500,
+    .OutMin = -4500,
 
-    .ErrorIntMax = 0,
-    .ErrorIntMin = 0,
+    .ErrorIntMax = 200000,
+    .ErrorIntMin = -200000,
 };
-
+// //
+//     .Kp = 0.10,             4            4.5     4.9         9.2     9.2    9.2
+//     .Ki = 0.18, //       1.5             2.1     2.1         2.1     2.5    5.5
+    //     .Kd = 0.01, //
 PID_t PID_Motor_L = {
     .Target = 0,
     .Actual = 0,
 
-    .Kp = 0,
-    .Ki = 0, // I
+    .Kp = 9.6,
+    .Ki = 2.5, // I
     .Kd = 0, // D
 
-    .OutMax = 0,
-    .OutMin = 0,
+    .OutMax =4500,
+    .OutMin = -4500,
 
-    .ErrorIntMax = 0,
-    .ErrorIntMin = 0,
+    .ErrorIntMax = 200000,
+    .ErrorIntMin = -200000,
 };
 
 // 简介：左右电机初始化
@@ -56,14 +67,12 @@ void Motor_Init(void)
 // 返回：无
 void Set_Motor_PWM(int32 motorL, int32 motorR)
 {
-
     if (motorL >= 0) // 电机
     {
         gpio_high(DIR_L);
         pwm_set_duty(PWM_L, motorL);
     } else {
         gpio_low(DIR_L);
-        // gpio_high(DIR_L);
         pwm_set_duty(PWM_L, -motorL);
     }
     if (motorR >= 0) {
@@ -80,12 +89,64 @@ void Set_Motor_PWM(int32 motorL, int32 motorR)
 // 返回：无
 // 备注：放定时中断里面执行
 // 备注：输出速度会随着定时中断时间而变化，进行限幅
+int8 MOTOR = 1;
 void Motor_Control(int16 Speed_l, int16 Speed_R)
 {
-
     Encoder_GetData();
-    Set_Motor_PWM(Motor_PID(&PID_Motor_L, motor_L.encoder_speed, Speed_l), Motor_PID(&PID_Motor_R, motor_R.encoder_speed, Speed_R));
+    motor_L.target_speed = Speed_l;
+    motor_R.target_speed = Speed_R;
+    if(MOTOR)
+    {
+        L = Motor_PID(&PID_Motor_L, (float)motor_L.encoder_speed, (float)motor_L.target_speed);
+        R = Motor_PID(&PID_Motor_R, (float)motor_R.encoder_speed, (float)motor_R.target_speed);
+    }   
+    // Set_Motor_PWM(Motor_PID(&PID_Motor_L, (float)motor_L.encoder_speed, (float)motor_L.target_speed), Motor_PID(&PID_Motor_R, (float)motor_R.encoder_speed, (float)motor_R.target_speed));
+    Set_Motor_PWM(L,R);
 }
+
+
+//简介：电机闭环差速控制
+//参数：左右电机的目标速度，差速比例系数，差速限幅
+//返回：无
+//备注：放定时中断里面执行
+//备注：输出速度会随着定时中断时间而变化，进行限幅
+void Diff_Motor_Control(int16 Speed,float wai,float nei)
+{
+    Encoder_GetData();
+    if(Err > 0)//要左转
+    {
+        motor_L.target_speed = Speed - nei * Err;//左轮减速
+        motor_R.target_speed = Speed + wai * Err;//右轮加速
+
+    }
+    else if(Err < 0)//要右转
+    {
+        motor_L.target_speed = Speed + wai * Err;//左轮加速
+        motor_R.target_speed = Speed - nei * Err;//右轮减速
+
+    }
+    else if(Err==0)
+    {
+        motor_L.target_speed = Speed;
+        motor_R.target_speed = Speed;
+    }
+
+
+    L = Motor_PID(&PID_Motor_L, (float)motor_L.encoder_speed,(float)motor_L.target_speed);
+    R = Motor_PID(&PID_Motor_R, (float)motor_R.encoder_speed, (float)motor_R.target_speed);
+    Set_Motor_PWM(L,R);
+
+    /* if(motor_L.encoder_speed<=50&&L>=2000)
+    { 
+        motor_L.target_speed=0;
+    }
+    if(motor_L.encoder_speed<=50&&L>=2000)
+    {
+        motor_R.target_speed = 0;
+    } */
+    // Set_Motor_PWM(Motor_PID(&PID_Motor_L, (float)motor_L.encoder_speed, (float)motor_L.target_speed), Motor_PID(&PID_Motor_R, (float)motor_R.encoder_speed, (float)motor_R.target_speed));
+}
+
 
 /********************************************编码器******************************************************************************************/
 
@@ -114,4 +175,6 @@ void Encoder_GetData(void)
     motor_R.encoder_raw   = encoder_get_count(ENCODER_R);
     motor_R.encoder_speed = motor_R.encoder_speed * X + motor_R.encoder_raw * (1 - X);
     encoder_clear_count(ENCODER_R);
+
+
 }

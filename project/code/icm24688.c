@@ -61,6 +61,16 @@ void Init_ICM42688(void)
 
     Write_Data_ICM42688(ICM42688_PWR_MGMT0, 0x0F);      // 设置GYRO_MODE,ACCEL_MODE为低噪声模式
     ICM42688_DELAY_MS(10);
+
+    // unsigned char dat[2];
+    // Read_Datas_ICM42688(ICM42688_ACCEL_DATA_X1, dat, 2);
+    // for(int i=0;i<100;i++)
+    // {
+    //     a += (2000.0f / 32768.0f * (short int)(((short int)dat[0] << 8) | dat[1])) * 0.005;
+
+    // }
+    // a = (2000.0f / 32768.0f * (short int)(((short int)dat[0] << 8) | dat[1])) * 0.005;
+
 }
 
 /**
@@ -98,6 +108,30 @@ void Get_Gyro_ICM42688(void)
     icm42688_gyro_y = icm42688_gyro_inv * (short int)(((short int)dat[2] << 8) | dat[3]);
     icm42688_gyro_z = icm42688_gyro_inv * (short int)(((short int)dat[4] << 8) | dat[5]);
 }
+float GyroxInt;
+float a;
+float icm42688_gyro_y1;
+float icm42688_gyro_z1;
+
+void icm42688_gyro_transition (void)
+{
+    unsigned char dat[6];
+    Read_Datas_ICM42688(ICM42688_ACCEL_DATA_X1, dat, 6);
+    // a = (2000.0f / 32768.0f * (short int)(((short int)dat[0] << 8) | dat[1])) * 0.005;
+    GyroxInt += ((2000.0f / 32768.0f * (short int)(((short int)dat[0] << 8) | dat[1])) * 0.005) - 0.603933006;
+    icm42688_gyro_y1 += ((2000.0f / 32768.0f * (short int)(((short int)dat[2] << 8) | dat[3])) * 0.005 )- 0.603933006;
+    icm42688_gyro_z1 += ((2000.0f / 32768.0f * (short int)(((short int)dat[4] << 8) | dat[5])) * 0.005 )- 0.603933006;
+
+
+
+    // float gyro_z_data = 0;
+    // gyro_z_data = (float)icm42688_gyro_x / 16.4f; // 0x18 陀螺仪量程为:±2000dps     获取到的陀螺仪数据除以 16.4      可以转化为带物理单位的数据，单位为：°/s
+    // return gyro_z_data;
+}
+
+
+
+
 
 /**
 *

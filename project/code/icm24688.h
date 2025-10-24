@@ -35,6 +35,10 @@
 
 extern float icm42688_acc_x, icm42688_acc_y, icm42688_acc_z  ;       // 声明ICM42688加速度计数据
 extern float icm42688_gyro_x, icm42688_gyro_y, icm42688_gyro_z ;     // 声明ICM42688角加速度数据
+extern float GyroxInt;
+extern float a;
+extern float icm42688_gyro_y1;
+extern float icm42688_gyro_z1;
 
 enum icm42688_afs
 {
@@ -101,6 +105,8 @@ void Init_ICM42688(void);
 void Get_Acc_ICM42688(void);
 void Get_Gyro_ICM42688(void);
 void Set_LowpassFilter_Range_ICM42688(enum icm42688_afs afs, enum icm42688_aodr aodr, enum icm42688_gfs gfs, enum icm42688_godr godr);
+// float icm42688_gyro_transition (float icm42688_gyro_x);
+void icm42688_gyro_transition (void);
 
 
 

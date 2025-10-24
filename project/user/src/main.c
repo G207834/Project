@@ -41,6 +41,8 @@
 #include "servo.h"
 #include "pid.h"
 
+
+
 // *************************** 例程硬件连接说明 ***************************
 // 使用 type线 连接
 //      模块管脚            单片机管脚
@@ -80,6 +82,12 @@
 // **************************** 代码区域 ****************************
 #define LED1 (E9)
 
+#define BEEP (C13)
+
+
+ extern int Longest_WhiteLie_L[2];
+extern int Longest_WhiteLie_R[2];
+
 // 0：不包含边界信息
 // 1：包含三条边线信息，边线信息只包含横轴坐标，纵轴坐标由图像高度得到，意味着每个边界在一行中只会有一个点
 // 2：包含三条边线信息，边界信息只含有纵轴坐标，横轴坐标由图像宽度得到，意味着每个边界在一列中只会有一个点，一般来说很少有这样的使用需求
@@ -115,7 +123,7 @@ int main(void)
 #if (3 <= INCLUDE_BOUNDARY_TYPE)
     int32 j = 0;
 #endif
-    clock_init(SYSTEM_CLOCK_120M); // 初始化芯片时钟 工作频率为 144MHz
+    clock_init(SYSTEM_CLOCK_144M); // 初始化芯片时钟 工作频率为 144MHz
     debug_init();                  // 初始化默认 Debug UART
 
     /*  // 此处编写用户代码 例如外设初始化代码等
@@ -143,7 +151,7 @@ int main(void)
          }
      }
   */
-    gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 初始化 LED1 输出 默认高电平 推挽输出模式
+    /*  gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 初始化 LED1 输出 默认高电平 推挽输出模式 */
 
     // 推荐先初始化摄像头，后初始化逐飞助手
     while (1) {
@@ -158,7 +166,7 @@ int main(void)
     // 逐飞助手初始化 数据传输使用USB CDC
     // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIFI_SPI);
 
-    // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_CUSTOM);
+    seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_CUSTOM);
 
     //  如果要发送图像信息，则务必调用seekfree_assistant_camera_information_config函数进行必要的参数设置
     //  如果需要发送边线则还需调用seekfree_assistant_camera_boundary_config函数设置边线的信息
@@ -260,40 +268,149 @@ int main(void)
     /* 屏幕初始化 */
     // ips200_set_dir(IPS200_CROSSWISE);
     // ips200_init(IPS200_TYPE_SPI);
+    Init_ICM42688();
 
     // key_init(10);
 
     // uint8 Value = 163;
     uint8 Value;
-    extern volatile float Err;
     extern PID_t PID_Servo;
-    extern int Longest_WhiteLie_L[2];
+    // key_index_enum key_index_array[KEY_NUMBER] = {KEY_1,KEY_2,KEY_3,KEY_4};
+    // key_init(5);
+    // wireless_uart_init();
+    //  Init_ICM42688();
+
+Value = my_adapt_threshold(mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
     Encoder_Init();
-    Motor_Init();
+    // Motor_Init();
     Servo_Init();
+    Motor_Init();
+    pit_ms_init(PIT_CH, 5);
+    gpio_init(BEEP, GPO, GPIO_LOW, GPO_PUSH_PULL);
     extern int Island_State;
-    Set_Motor_PWM(1350, 1350);
+    // Set_Motor_PWM(1500,1500);
+    // 左    占空比  编码器    右    占空比  编码器
+    //       1000    230             1000    116
+    //       1500    450             1500    200
+    //       2000    660             2000    300
+    /* uint8 state1 = 1;
+    uint8 state2 = 1;
+    uint8 state3 = 1;
+    uint8 state4 = 1; */
+    // Value = my_adapt_threshold(mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
     // 此处编写用户代码 例如外设初始化代码等
     while (1) {
         if (mt9v03x_finish_flag) {
-            Value = my_adapt_threshold(mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
             /* 二值化 */
             Image_Change_TwoValues(Value);
+            mt9v03x_finish_flag = 0;
             if (Island_State != 3) {
                 Image_LongestWhite_SearchLine();
-                PID_Servo.Kp = 2.56 + 0.00162 * (MT9V03X_H - Longest_WhiteLie_L[0]);
+                Lost_Iamge();
+                // 1.9    0.002750   2.2  0.00283        2.25
+                // 2.25      0.0029                      0.00295
+                //  Set_Motor_PWM(1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]), 1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]));
+                PID_Servo.Kp = 2.25 + 0.0045 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0);
                 Image_Cross_Detect();
             }
             Image_Island_Dect();
             Err_Sum();
             Servo_Control(Err);
-            // Image_Show_Boundry();
-            /* 发送图像到串口 */
-            // seekfree_assistant_camera_send();
+            // printf("%f,%f,%f\n",GyroxInt,icm42688_gyro_y1,icm42688_gyro_z1);
+            // printf("%f,%f,%f,%f,%f\n",Gkdout,Err,out,Pout,icm42688_gyro_x);
+            // Dynamic_PD();
+
+            //Image_Show_Boundry();
+            //  /* 发送图像到串口 */
+            //  // seekfree_assistant_camera_send();
             /* 屏幕显示总钻风，画幅和摄像头一致 */
             // ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 200);
-            mt9v03x_finish_flag = 0;
+            // ips200_draw_line(160, 0, 160, 200, RGB565_RED);
+            // ips200_show_int(0, 210, LostFlag, 1);
         }
+
+        // switch(key_get_state(key_index_array[0]))
+        //     {
+        //         case KEY_SHORT_PRESS:
+        //         MOTOR = 1;
+        //         // PID_Motor_L.Ki +=0.1;
+        //         break;
+        //         case KEY_LONG_PRESS:
+        //         if(state1)
+        //         {
+        //             // PID_Motor_L.Ki -=0.1;
+        //             MOTOR = 1;
+        //             state1=0;
+        //         }
+        //         key_clear_state(key_index_array[0]);
+        //         break;
+        //         case KEY_RELEASE:
+        //         state1=1;
+        //         break;
+        //     }
+        //     switch(key_get_state(key_index_array[1]))
+        //     {
+        //         case KEY_SHORT_PRESS:
+        //         PID_Motor_L.Kp +=0.1;
+        //         break;
+        //         case KEY_LONG_PRESS:
+        //         if(state2)
+        //         {
+        //             PID_Motor_L.Kp -=0.1;
+        //             state2=0;
+        //         }
+        //         key_clear_state(key_index_array[1]);
+        //         break;
+        //         case KEY_RELEASE:
+        //         state2=1;
+        //         break;
+        //     }
+        //     switch(key_get_state(key_index_array[2]))
+        //     {
+        //         case KEY_SHORT_PRESS:
+        //         PID_Motor_R.Ki +=0.1;
+        //         break;
+        //         case KEY_LONG_PRESS:
+        //         if(state3)
+        //         {
+        //             PID_Motor_R.Ki -=0.1;
+        //             state3=0;
+        //         }
+        //         key_clear_state(key_index_array[2]);
+        //         break;
+        //         case KEY_RELEASE:
+        //         state3=1;
+        //         break;
+        //     }
+        //     switch(key_get_state(key_index_array[3]))
+        //     {
+        //         case KEY_SHORT_PRESS:
+        //         PID_Motor_R.Kp +=0.1;
+        //         break;
+        //         case KEY_LONG_PRESS:
+        //         if(state4)
+        //         {
+        //             PID_Motor_R.Kp -=0.1;
+        //             state4=0;
+        //         }
+        //         key_clear_state(key_index_array[3]);
+        //         break;
+        //         case KEY_RELEASE:
+        //         state4=1;
+        //         break;
+        //     }
+
+        // printf("ENCODER_l counter \t%d .\r\n", motor_L.encoder_raw);                 // 输出编码器计数信息
+        // printf("ENCODER_r counter \t%d .\r\n", motor_R.encoder_raw);                 // 输出编码器计数信息
+        // printf("i \t%d .\r\n", i);
+        //  printf("\t%f .\r\n",icm42688_gyro_x);
+        // printf("%d,%d,%d,%d\n",motor_L.encoder_speed,motor_L.target_speed,motor_R.encoder_speed,motor_R.target_speed);
+        // Image_Show_Boundry();
+        /* 发送图像到串口 */
+        // seekfree_assistant_camera_send();
+        /* 屏幕显示总钻风，画幅和摄像头一致 */
+        // ips200_displayimage03x(mt9v03x_image_TwoValues[0], 320, 200);
+        // ips200_draw_line(160, 0, 160, 200, RGB565_RED);
 
         /* seekfree_assistant_data_analysis();
         if (seekfree_assistant_parameter_update_flag[0]) {
@@ -305,6 +422,108 @@ int main(void)
         } */
         // 此处编写需要循环执行的代码
     }
+}
+
+void pit_handler(void)
+{
+    // key_scanner();
+    // gpio_toggle_level(LED1);
+    // Encoder_GetData();
+    // icm42688_gyro_transition();
+    if (LostFlag) {
+        Motor_Control(0, 0);
+    } else {
+        // Motor_Control(250, 250);
+        // 1.5 2 1.2 2  0.8 2.3
+        Diff_Motor_Control(350-(0.3*(MT9V03X_H - Longest_WhiteLie_R[0])), 0.55, 2.3);
+    }
+    // pid
+    // WIFI波形图
+    //  seekfree_assistant_data_analysis();
+    //  if(seekfree_assistant_parameter_update_flag[0])
+    //  {
+    //      motor_L.encoder_speed=seekfree_assistant_parameter[0];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //      seekfree_assistant_oscilloscope_data.data[0] = motor_L.encoder_speed;//左边是波形通道，右边是要示波的参数
+    //      seekfree_assistant_parameter_update_flag[0] = 0;//清除标志位
+
+    // }
+
+    // if(seekfree_assistant_parameter_update_flag[1])
+    // {
+    //     motor_L.target_speed=seekfree_assistant_parameter[1];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //     seekfree_assistant_oscilloscope_data.data[1] = motor_L.target_speed;//左边是波形通道，右边是要示波的参数
+    //     seekfree_assistant_parameter_update_flag[1] = 0;//清除标志位
+
+    // }
+
+    // if(seekfree_assistant_parameter_update_flag[2])
+    // {
+    //     motor_R.encoder_speed=seekfree_assistant_parameter[2];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //     seekfree_assistant_oscilloscope_data.data[2] = motor_R.encoder_speed;//左边是波形通道，右边是要示波的参数
+    //     seekfree_assistant_parameter_update_flag[2] = 0;//清除标志位
+
+    // }
+
+    // if(seekfree_assistant_parameter_update_flag[3])
+    // {
+    //     motor_L.target_speed=seekfree_assistant_parameter[3];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //     seekfree_assistant_oscilloscope_data.data[3] = motor_L.target_speed;//左边是波形通道，右边是要示波的参数
+    //     seekfree_assistant_parameter_update_flag[3] = 0;//清除标志位
+
+    // }
+
+    // 舵机参数调试部分
+    //  seekfree_assistant_data_analysis();
+    //  if(seekfree_assistant_parameter_update_flag[0])
+    //      {
+
+    //         // Err=seekfree_assistant_parameter[0];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[0] = Err;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[0] = 0;//清除标志位
+
+    //         // float tep = OutServo + 755;
+    //         // tep = seekfree_assistant_parameter[1];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[1] = tep;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[1] = 0;//清除标志位
+
+    //         // PID_Servo.Kp=seekfree_assistant_parameter[2];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[2] = PID_Servo.Kp;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[2] = 0;//清除标志位
+
+    //         // PID_Servo.Kd=seekfree_assistant_parameter[3];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[3] = PID_Servo.Kd;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[3] = 0;//清除标志位
+
+    //         // PID_Servo.Gd=seekfree_assistant_parameter[4];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[4] = PID_Servo.Gd;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[4] = 0;//清除标志位
+
+    //         // //电机调参部分
+    //         // motor_R.encoder_speed=seekfree_assistant_parameter[0];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[0] = motor_R.encoder_speed;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[0] = 0;//清除标志位
+
+    //         // motor_R.target_speed= seekfree_assistant_parameter[1];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[1] = motor_R.target_speed;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[1] = 0;//清除标志位
+
+    //         // PID_Motor_R.Kp=seekfree_assistant_parameter[2];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[2] = PID_Motor_R.Kp;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[2] = 0;//清除标志位
+
+    //         // PID_Motor_R.Ki= seekfree_assistant_parameter[3];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[3] = PID_Motor_R.Ki;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[3] = 0;//清除标志位
+
+    //         // PID_Motor_R.Kd=seekfree_assistant_parameter[4];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[4] = PID_Motor_R.Kd;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[4] = 0;//清除标志位
+
+    //         // ERR=seekfree_assistant_parameter[5];//左边是单片机里要调整的变量，右边是通道接收的数据
+    //         // seekfree_assistant_oscilloscope_data.data[5] = ERR;//左边是波形通道，右边是要示波的参数
+    //         // seekfree_assistant_parameter_update_flag[5] = 0;//清除标志位
+
+    //     }
 }
 
 /* void TIM6_IRQHandler(void)
