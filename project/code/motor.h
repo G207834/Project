@@ -41,9 +41,8 @@ extern int8 MOTOR;
 void Motor_Init(void);
 void Set_Motor_PWM(int32 motorL, int32 motorR);
 void Motor_Control(int16 Speed_l, int16 Speed_R);
-// void Diff_Motor_Control(int16 Speed,float k);
-// void Diff_Motor_Control(int16 Speed,float kl,float kr);
 void Diff_Motor_Control(int16 Speed,float wai,float nei);
+void New_Diff_Motor_Control(int16 Speed,float wai,float nei,float nei2);
 
 
 /*************************************电机定义部分***************************************************/

@@ -24,7 +24,7 @@ PID_t PID_Servo = {
     .Kp = 1.9,
     .Ki = 0,   // I
     .Kd = 0.05, // Ds0.04
-    .Gkd = 0.1,
+    .Gkd = 0.12,
     .Kp2 = 0.0015,
 
     .OutMax = 110,

@@ -1,10 +1,6 @@
 #include "Image.h"
 #include "math.h"
 
-extern int Island_State4_StartLie;
-
-extern int Island_State;
-
 uint8 mt9v03x_image_TwoValues[MT9V03X_H][MT9V03X_W] = {0}; // 二值化后的数组
 volatile int Longest_WhiteLie_L[2]                  = {0}; // 左最长白列，[0]白列长度，[1]白列位置，第几列
 volatile int Longest_WhiteLie_R[2]                  = {0}; // 右最长白列，[0]白列长度，[1]白列位置，第几列
@@ -31,17 +27,20 @@ int R_Up_Point   = 0;
 extern volatile float Err; // 摄像头误差
 
 /* 标志位元素 */
-int Straight_Flag = 0; // 直道标志位
-int Island_State  = 0; // 环岛标志位
-int Island_Flag_L = 0; // 环岛标志位
-int Island_Flag_R = 0; // 环岛标志位
-int Ramp_Flag     = 0; // 坡道标志位
-int Cross_Flag    = 0; // 十字标志位
+int Straight_Flag       = 0; // 直道标志位
+int Island_State        = 0; // 环岛标志位
+int Island_Flag_L       = 0; // 环岛标志位
+int Island_Flag_R       = 0; // 环岛标志位
+int Ramp_Flag           = 0; // 坡道标志位
+int Cross_Flag          = 0; // 十字标志位
+int Zebra_Crossing_Flag = 0; // 斑马线标志位
 
 /* 丢图检测 */
 int LostFlag = 0;
 
 /* 图像二值化，固定阈值，原图0-255>黑-白,二值图0or255>黑—白*/
+/// @brief 图像二值化
+/// @param value 二值化阈值，高于此灰度为白，低于则黑
 void Image_Change_TwoValues(uint8 value)
 {
     for (int hang = 0; hang < MT9V03X_H; hang++) {
@@ -56,6 +55,11 @@ void Image_Change_TwoValues(uint8 value)
 }
 
 /* 动态阈值，大津法 */
+/// @brief 快速大津法
+/// @param image 灰度图像指针
+/// @param col 宽
+/// @param row 高
+/// @return 二值化阈值
 int my_adapt_threshold(uint8 *image, uint16 col, uint16 row) // 注意计算阈值的一定要是原图像
 {
 #define GrayScale 256
@@ -106,16 +110,10 @@ int my_adapt_threshold(uint8 *image, uint16 col, uint16 row) // 注意计算阈�
     return threshold;
 }
 
-/* 图像中线 93 H*/
-/* 求赛道左右边线 >左右边线*/
-/* 黑白交界线 */
-/* 化简后，就找一行，赛道中点 */
-/* 从中间往两边找 */
-
+/// @brief 双最长白列巡线
 void Image_LongestWhite_SearchLine()
 {
-    /* int start_lie = 30; // 最长白列搜索区间，图像左右减去此长度
-    int end_lie   = MT9V03X_W - 1 - start_lie; */
+
     int hang  = 0; // 行
     int lie   = 0; // 列
     int Count = 0;
@@ -125,13 +123,13 @@ void Image_LongestWhite_SearchLine()
         White_Lie[lie][0] = 0;
         White_Lie[lie][2] = 0;
         Count             = 0;
-        for (hang = MT9V03X_H - 1; hang >= 20; hang--) {
+        for (hang = MT9V03X_H - 1; hang >= 15; hang--) {
             if (mt9v03x_image_TwoValues[hang][lie] == 0) // 在某列找到黑点
             {
                 if (White_Lie[lie][1] != 0) // 起始点已记录
                 {
                     Count++;
-                    if (Count > 3) {
+                    if (Count >= 2) /* 滤掉黑点的阈值 */ {
                         White_Lie[lie][2] = hang + 1;
                     }
                 }
@@ -153,11 +151,13 @@ void Image_LongestWhite_SearchLine()
             }
         }
     }
+
+    /* 环岛状态4、5需要改变最长白列搜素区间 */
     if (Island_State == 4 || Island_State == 5) {
         /* 从左到右找右边最长白列 */
         Longest_WhiteLie_R[0] = 0;
         Longest_WhiteLie_R[1] = 0;
-        for (lie = Island_State4_StartLie; lie <= MT9V03X_W - 10; lie++) {
+        for (lie = Island_State4_StartLie+5; lie <= MT9V03X_W - 10; lie++) {
             if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
                 Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
                 Longest_WhiteLie_R[1] = lie;               // 记录下标
@@ -166,7 +166,7 @@ void Image_LongestWhite_SearchLine()
         /* 从右到左找左边最长白列 */
         Longest_WhiteLie_L[0] = 0;
         Longest_WhiteLie_L[1] = 0;
-        for (lie = Longest_WhiteLie_R[1]; lie >= Island_State4_StartLie; lie--) {
+        for (lie = Longest_WhiteLie_R[1]; lie >= Island_State4_StartLie+5; lie--) {
             if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
                 Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
                 Longest_WhiteLie_L[1] = lie;               // 记录下标
@@ -176,7 +176,7 @@ void Image_LongestWhite_SearchLine()
         /* 从左到右找右边最长白列 */
         Longest_WhiteLie_R[0] = 0;
         Longest_WhiteLie_R[1] = 0;
-        for (lie = 30; lie <= MT9V03X_W - 10; lie++) {
+        for (lie = 35; lie <= MT9V03X_W - 10; lie++) {
             if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
                 Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
                 Longest_WhiteLie_R[1] = lie;               // 记录下标
@@ -185,7 +185,7 @@ void Image_LongestWhite_SearchLine()
         /* 从右到左找左边最长白列 */
         Longest_WhiteLie_L[0] = 0;
         Longest_WhiteLie_L[1] = 0;
-        for (lie = Longest_WhiteLie_R[1]; lie >= 30; lie--) {
+        for (lie = Longest_WhiteLie_R[1]; lie >= 35; lie--) {
             if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
                 Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
                 Longest_WhiteLie_L[1] = lie;               // 记录下标
@@ -196,9 +196,8 @@ void Image_LongestWhite_SearchLine()
     /* 搜索截止行设为最长白列长度 */
     Search_Stop_Line = Longest_WhiteLie_R[0];
 
+    /* 寻找边界 */
     for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line - 1; hang--) {
-        // for (hang = MT9V03X_H - 1; hang >= 1; hang--) {
-        /* 从左最长白列向左寻线 */
         for (lie = Longest_WhiteLie_L[1]; lie >= 0 + 2; lie--) {
             if (mt9v03x_image_TwoValues[hang][lie] == 255 && mt9v03x_image_TwoValues[hang][lie - 1] == 0 && mt9v03x_image_TwoValues[hang][lie - 2] == 0) {
                 L_Line[hang] = lie;
@@ -232,8 +231,8 @@ void Image_LongestWhite_SearchLine()
     Both_LostLine_Time = 0;
     Boundry_Start_L    = 0;
     Boundry_Start_R    = 0;
+
     /* 统计处理 */
-    /* for (hang = MT9V03X_H - 1; hang >= 0; hang--) */
     for (hang = MT9V03X_H - 1; hang >= MT9V03X_H - Search_Stop_Line - 1; hang--) {
         /* 统计丢线数 */
         if (L_Flag[hang] == 0) {
@@ -263,21 +262,23 @@ void Image_LongestWhite_SearchLine()
     ips200_show_int(280, 210, Search_Stop_Line, 3); */
 }
 
-/* 直道检测 */
-
-/* 中线分布方差
-视野远处到近处的斜率 */
+/// @brief 长直道检测
 void Straight_Detect()
 {
     Straight_Flag = 0;
-    if (Search_Stop_Line >= 65) // 截止行很远
+    if(Island_State==0)
     {
-        if (Boundry_Start_L >= 65 && Boundry_Start_R >= 65) // 起始点靠下
+        if (Search_Stop_Line >= 70) // 截止行很远
+    {
+        if (Boundry_Start_L >= 110 && Boundry_Start_R >= 110) // 起始点靠下
         {
-            if (-5 <= Err && Err <= 5) {
+            if (-20 <= Err && Err <= 20) {
                 Straight_Flag = 1;
+            } else {
+                Straight_Flag = 0;
             }
         }
+    }
     }
 }
 
@@ -398,6 +399,11 @@ void Image_Show_Boundry(void)
     // ips200_draw_line(MT9V03X_W / 2, MT9V03X_H - 10, MT9V03X_W / 2, MT9V03X_H, RGB565_RED);
 }
 
+/// @brief 两点补左边线
+/// @param x1
+/// @param y1
+/// @param x2
+/// @param y2
 void Left_Add_Line(int x1, int y1, int x2, int y2) // 左补线,补的是边界
 {
     int i, max, a1, a2;
@@ -437,6 +443,11 @@ void Left_Add_Line(int x1, int y1, int x2, int y2) // 左补线,补的是边界
     }
 }
 
+/// @brief 两点补右边线
+/// @param x1
+/// @param y1
+/// @param x2
+/// @param y2
 void Right_Add_Line(int x1, int y1, int x2, int y2) // 右补线,补的是边界
 {
     int i, max, a1, a2;
@@ -476,6 +487,9 @@ void Right_Add_Line(int x1, int y1, int x2, int y2) // 右补线,补的是边界
     }
 }
 
+/// @brief 延长左边线，向上找点，计算斜率，连线
+/// @param start 开始行
+/// @param end 停止行
 void Lengthen_Left_Boundry(int start, int end)
 {
     int i, t;
@@ -513,6 +527,9 @@ void Lengthen_Left_Boundry(int start, int end)
     }
 }
 
+/// @brief 延长右边线，向上找点，计算斜率，连线
+/// @param start 开始行
+/// @param end 停止行
 void Lengthen_Right_Boundry(int start, int end)
 {
     int i, t;
@@ -548,6 +565,7 @@ void Lengthen_Right_Boundry(int start, int end)
     }
 }
 
+/// @brief 十字检测
 void Image_Cross_Detect()
 {
     int down_search_start = 0; // 下点搜索开始行
@@ -595,26 +613,71 @@ void Image_Cross_Detect()
             Cross_Flag = 0;
         }
     }
-    // 角点相关变量，debug使用
-    // ips200_showint(0,12,Cross_Flag);
-    //    ips200_showint(0,13,Island_State);
-    //    ips200_showint(50,12,L_Up_Point);
-    //    ips200_showint(100,12,R_Up_Point);
-    //    ips200_showint(50,13,L_Down_Point);
-    //    ips200_showint(100,13,R_Down_Point);
+
+    /* 角点相关变量，debug使用 */
+    /*  ips200_showint(0,12,Cross_Flag);
+     ips200_showint(0,13,Island_State);
+     ips200_showint(50,12,L_Up_Point);
+     ips200_showint(100,12,R_Up_Point);
+     ips200_showint(50,13,L_Down_Point);
+     ips200_showint(100,13,R_Down_Point); */
 }
 
-// 丢图检测
+/// @brief 丢图检测
 void Lost_Iamge()
 {
-    int lie                  = 0;
-    uint16 Lowest_WhilePoint = 0;
-    for (lie = 0 + 20; lie <= MT9V03X_W - 1 - 20; lie++) {
-        if (White_Lie[lie][1] >= Lowest_WhilePoint) {
-            Lowest_WhilePoint = White_Lie[lie][1];
+    int lie        = 0;
+    int Lost_Count = 0;
+    for (lie = 70; lie <= MT9V03X_W - 1 - 70; lie++) // 中间47行
+    {
+        if (White_Lie[lie][1] <= MT9V03X_H - 12) { // 计数的阈值
+            Lost_Count++;
         }
     }
-    if (Lowest_WhilePoint <= MT9V03X_H - 1 - 5) {
+    if (Lost_Count >= 35) { // 计数大于30，认为丢图
         LostFlag = 1;
     }
+}
+
+/// @brief 斑马线检测
+void Zebra_Crossing()
+{
+    int lie             = 0;
+    int hang            = 0;
+    int start_hang      = 0;
+    int end_hang        = 0;
+    int middle_hang     = 0;
+    int count_R         = 0;
+    int count_L         = 0;
+    Zebra_Crossing_Flag = 0;
+    if (Island_State == 0 && Cross_Flag == 0)
+        if (Search_Stop_Line >= 80) {
+            for (hang = MT9V03X_H - 40; hang >= 60; hang--) {
+                if (R_Line[hang] - L_Line[hang] < 30) {
+                    if (start_hang == 0) {
+                        start_hang = hang;
+                    } else {
+                        end_hang = hang;
+                    }
+                } else if (start_hang != 0) {
+                    break;
+                }
+            }
+            if (start_hang != 0 && end_hang != 0) {
+                middle_hang = (start_hang + end_hang) / 2;
+                for (lie = 98; lie < 160; lie++) {
+                    if (mt9v03x_image_TwoValues[middle_hang][lie] == 255 && mt9v03x_image_TwoValues[middle_hang][lie + 1] == 0 && mt9v03x_image_TwoValues[middle_hang][lie + 2] == 0) {
+                        count_R++;
+                    }
+                }
+                for (lie = 98; lie > 20; lie--) {
+                    if (mt9v03x_image_TwoValues[middle_hang][lie] == 255 && mt9v03x_image_TwoValues[middle_hang][lie - 1] == 0 && mt9v03x_image_TwoValues[middle_hang][lie - 2] == 0) {
+                        count_L++;
+                    }
+                }
+                if ((count_R >= 3 && count_L >= 3) || (count_R + count_L) >= 5) {
+                    Zebra_Crossing_Flag = 1;
+                }
+            }
+        }
 }

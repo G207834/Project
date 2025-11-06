@@ -143,6 +143,13 @@
 
 
 #include "icm24688.h"
+#include "Image.h"
+#include "Island.h"
+#include "motor.h"
+#include "Control.h"
+#include "motor.h"
+#include "servo.h"
+#include "pid.h"
 //===================================================用户自定义文件===================================================
 
 #endif

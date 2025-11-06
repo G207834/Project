@@ -11,8 +11,7 @@
 
 #define Servo_DUTY(x)         ((float)PWM_DUTY_MAX / (1000.0 / (float)Servo_FREQ) * (0.5 + (float)(x) / 90.0))          //  ¶æ»ú½Ç¶È¼ÆËã
 
-
-
+extern PID_t PID_Servo;
 
 void Servo_Init(void);
 void Servo_Set(uint32 servo_motor_duty);

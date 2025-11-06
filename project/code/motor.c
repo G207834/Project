@@ -19,12 +19,20 @@ PID_t PID_Motor_R = {
     .Target = 0,
     .Actual = 0,
 
-    .Kp = 7.2,
-    .Ki = 4, // I
+    // .Kp = 9.6,//7.2
+    // .Ki = 2.5, // I 4
+    // .Kd = 0, // D
+
+    // .Kp = 8.5,
+    // .Ki = 7.8, // I
+    // .Kd = 0, // D
+
+    .Kp = 2.85,//1.7  1.85
+    .Ki = 0.66, // I 0.65 0.66
     .Kd = 0, // D
 
-    .OutMax = 4500,
-    .OutMin = -4500,
+    .OutMax = 5200,
+    .OutMin = -5200,
 
     .ErrorIntMax = 200000,
     .ErrorIntMin = -200000,
@@ -37,12 +45,20 @@ PID_t PID_Motor_L = {
     .Target = 0,
     .Actual = 0,
 
-    .Kp = 9.6,
-    .Ki = 2.5, // I
+    // .Kp = 9.6,
+    // .Ki = 2.5, // I
+    // .Kd = 0, // D
+
+    // .Kp = 14.2,
+    // .Ki = 8.6, // I
+    // .Kd = 0, // D
+
+    .Kp = 2.65,//  1.65
+    .Ki = 0.65, // I  0.68  0.65
     .Kd = 0, // D
 
-    .OutMax =4500,
-    .OutMin = -4500,
+    .OutMax =5000,
+    .OutMin = -5000,
 
     .ErrorIntMax = 200000,
     .ErrorIntMin = -200000,
