@@ -154,22 +154,46 @@ void Image_LongestWhite_SearchLine()
 
     /* 环岛状态4、5需要改变最长白列搜素区间 */
     if (Island_State == 4 || Island_State == 5) {
-        /* 从左到右找右边最长白列 */
-        Longest_WhiteLie_R[0] = 0;
-        Longest_WhiteLie_R[1] = 0;
-        for (lie = Island_State4_StartLie+5; lie <= MT9V03X_W - 10; lie++) {
-            if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
-                Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
-                Longest_WhiteLie_R[1] = lie;               // 记录下标
+        if(Island_Flag_R)
+        {
+            /* 从左到右找右边最长白列 */
+            Longest_WhiteLie_R[0] = 0;
+            Longest_WhiteLie_R[1] = 0;
+            for (lie = Island_State4_StartLie + 5; lie <= MT9V03X_W - 10; lie++) {
+                if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
+                    Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
+                    Longest_WhiteLie_R[1] = lie;               // 记录下标
+                }
+            }
+            /* 从右到左找左边最长白列 */
+            Longest_WhiteLie_L[0] = 0;
+            Longest_WhiteLie_L[1] = 0;
+            for (lie = Longest_WhiteLie_R[1]; lie >= Island_State4_StartLie + 5; lie--) {
+                if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
+                    Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
+                    Longest_WhiteLie_L[1] = lie;               // 记录下标
+                }
             }
         }
-        /* 从右到左找左边最长白列 */
-        Longest_WhiteLie_L[0] = 0;
-        Longest_WhiteLie_L[1] = 0;
-        for (lie = Longest_WhiteLie_R[1]; lie >= Island_State4_StartLie+5; lie--) {
-            if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
-                Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
-                Longest_WhiteLie_L[1] = lie;               // 记录下标
+        else
+        {
+            /* 从右到左找左边最长白列 */
+            Longest_WhiteLie_R[0] = 0;
+            Longest_WhiteLie_R[1] = 0;
+            for (lie = Island_State4_StartLie - 5; lie >=10; lie--) {
+                if (White_Lie[lie][0] >= Longest_WhiteLie_R[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
+                    Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
+                    Longest_WhiteLie_L[1] = lie;               // 记录下标
+                }
+            }
+            /* 从左到右找左边最长白列 */
+            Longest_WhiteLie_L[0] = 0;
+            Longest_WhiteLie_L[1] = 0;
+            for (lie = Longest_WhiteLie_L[1]; lie <= Island_State4_StartLie - 5; lie++) {
+                if (White_Lie[lie][0] >= Longest_WhiteLie_L[0] && White_Lie[lie][1] >= MT9V03X_H - 10) {
+                    Longest_WhiteLie_L[0] = White_Lie[lie][0]; // 记录长度
+                    Longest_WhiteLie_L[1] = lie;               // 记录下标
+                }
             }
         }
     } else {
