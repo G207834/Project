@@ -77,9 +77,9 @@
 
 extern int Longest_WhiteLie_L[2];
 extern int Longest_WhiteLie_R[2];
-int32 Count = 0;
-int Stop_Flag=0;
-int Init_Flag=0;
+int32 Count   = 0;
+int Stop_Flag = 0;
+int Init_Flag = 0;
 
 // 0：不包含边界信息
 // 1：包含三条边线信息，边线信息只包含横轴坐标，纵轴坐标由图像高度得到，意味着每个边界在一行中只会有一个点
@@ -264,8 +264,8 @@ int main(void)
     Init_ICM42688();
 
     // uint8 Value = 163;
-    uint8 Value=163;
-    int Image_Count=0;
+    uint8 Value     = 163;
+    int Image_Count = 0;
 
     Encoder_Init();
     Servo_Init();
@@ -275,53 +275,46 @@ int main(void)
 
     while (1) {
         if (mt9v03x_finish_flag) {
-            Init_Flag=1;
+            Init_Flag = 1;
             Image_Count++;
-            if(Image_Count>=10)
-            {
-                Value = my_adapt_threshold(mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
-                Image_Count=0;
+            if (Image_Count >= 10) {
+                Value       = my_adapt_threshold(mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
+                Image_Count = 0;
             }
             /* 二值化 */
             Image_Change_TwoValues(Value);
             mt9v03x_finish_flag = 0;
             if (Island_State != 3) {
                 Image_LongestWhite_SearchLine();
-                if(Count>=1300)
-                {
+                if (Count >= 1300) {
                     Lost_Iamge();
                 }
                 // 1.9    0.002750   2.2  0.00283        2.25       2.25  2.25
                 // 2.25      0.0029                      0.00295   0.0045  0.005
                 //  Set_Motor_PWM(1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]), 1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]));
-                if(Island_State!=0&&Island_Number==1)
-                {
+                if (Island_State != 0 && Island_Number == 1) {
                     PID_Servo.Kp = 2.4;
-                }
-                else
-                {
-                    //0.00305   2.3        0.0068         
-                    //2.55   0.0068 0.0072
-                    PID_Servo.Kp = 2.65 + 0.0075 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0); 
-                    
+                } else {
+                    // 0.00305   2.3        0.0068
+                    // 2.55   0.0068 0.0072
+                    PID_Servo.Kp = 2.65 + 0.0075 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0);
+
                     // if(Island_State==3)
                     // {
                     //     PID_Servo.Kp = 2.1 + 0.0068 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0);
                     // }
                     // else
                     // {
-                    //    PID_Servo.Kp = 2.3 + 0.0068 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0); 
+                    //    PID_Servo.Kp = 2.3 + 0.0068 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0);
                     // }
                 }
                 Image_Cross_Detect();
             }
-            if(Count>=1300)
-            {
+            if (Count >= 1300) {
                 Image_Island_Dect();
                 Zebra_Crossing();
-                if(Zebra_Crossing_Flag)
-                {
-                    Stop_Flag=1;
+                if (Zebra_Crossing_Flag) {
+                    Stop_Flag = 1;
                 }
             }
             Straight_Detect();
@@ -339,7 +332,6 @@ int main(void)
             // ips200_draw_line(160, 0, 160, 200, RGB565_RED);
             // ips200_show_int(0, 210, Longest_WhiteLie_R[0], 3);
             // ips200_show_int(40, 210, Straight_Flag, 1);
-            
         }
 
         // printf("ENCODER_l counter \t%d .\r\n", motor_L.encoder_raw);                 // 输出编码器计数信息
@@ -347,7 +339,6 @@ int main(void)
         // printf("i \t%d .\r\n", i);
         //  printf("\t%f .\r\n",icm42688_gyro_x);
         // printf("%d,%d,%d,%d,%f,%f\n",motor_L.encoder_speed,motor_L.target_speed,motor_R.encoder_speed,motor_R.target_speed,L,R);
-
     }
 }
 
@@ -359,43 +350,33 @@ void pit_handler(void)
     // gpio_toggle_level(LED1);
     // Encoder_GetData();
     // icm42688_gyro_transition();
-    if(Init_Flag)
-    {
+    if (Init_Flag) {
         Count++;
-        if(Count>=1000)
-        {
-            if (LostFlag||Stop_Flag) 
-            {
+        if (Count >= 1000) {
+            if (LostFlag || Stop_Flag) {
                 Motor_Control(0, 0);
-            } 
-            else 
-            {
-            //  Motor_Control(330, 330);
-            // 1.5 2 1.2 2  0.8 2.3
-            //0.3  0.2       
-            //0.6  2.35  0.6  2.5
-                if(Straight_Flag)
-                {
-                    Diff_Motor_Control(450,0,0);
+            } else {
+                //  Motor_Control(330, 330);
+                // 1.5 2 1.2 2  0.8 2.3
+                // 0.3  0.2
+                // 0.6  2.35  0.6  2.5
+                if (Straight_Flag) {
+                    Diff_Motor_Control(450, 0, 0);
 
-                }
-                else
-                {
+                } else {
                     // Diff_Motor_Control(380 - (0.1 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.5, 2.55);
-                    //0.60  2.68
+                    // 0.60  2.68
                     /* Diff_Motor_Control(370 - (0.2 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.65, 2.68); */
                     // Diff_Motor_Control(370 - (0.1 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.3, 3.6);
                     // 0.55 2.50
-                    //0.58  2.5
+                    // 0.58  2.5
                     // Diff_Motor_Control(330 - (0.1 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.55, 2.50);
-                    //0.039 0.059   0.043 0.058
-                    Diff_Motor_Control(375 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.039,0.059);
+                    // 0.039 0.059   0.043 0.058
+                    Diff_Motor_Control(375 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.039, 0.059);
                     // Diff_Motor_Control(360 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.45, 2.3);
                     // Diff_Motor_Control(330,0,0);
                 }
-
             }
         }
-
     }
 }

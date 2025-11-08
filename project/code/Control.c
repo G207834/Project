@@ -143,7 +143,7 @@ const float Weight[MT9V03X_H] =
 void Err_Sum(void)
 {
     int i;
-    float sum            = 0;
+    float sum          = 0;
     float weight_count = 0;
     // 常规误差
     for (i = MT9V03X_H - 1; i >= MT9V03X_H - Search_Stop_Line - 1; i--) // 常规误差计算
