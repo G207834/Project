@@ -775,7 +775,7 @@ void Image_Island_Dect()
                 // if (Monotonicity_Change_Line_L != 0 && Both_LostLine_Time > 8) {
                 if (Monotonicity_Change_Line_L != 0) {
                     Left_Add_Line(L_Line[Monotonicity_Change_Line_L], Monotonicity_Change_Line_L, MT9V03X_W - 1, 0);
-                    if ((Monotonicity_Change_Line_L >= MT9V03X_H - 25 || L_Line[Monotonicity_Change_Line_L] <= 25) && Road_Wide[Monotonicity_Change_Line_L] >= 2) {
+                    if ((Monotonicity_Change_Line_L >= MT9V03X_H - 20 || L_Line[Monotonicity_Change_Line_L] <= 20) && Road_Wide[Monotonicity_Change_Line_L] >= 2) {
                         Island_State = 6;
                         gpio_set_level(BEEP, GPIO_HIGH);
                         if (Island_Number == 1) {
@@ -836,7 +836,7 @@ void Image_Island_Dect()
                         Left_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                     }
                 }
-                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[1] >= MT9V03X_W - 40) {
+                if (Island_State3_Point[0] > MT9V03X_H - 33) {
                     gpio_set_level(BEEP, GPIO_LOW);
                     Island_State  = 0;
                     Island_Flag_R = 0;
