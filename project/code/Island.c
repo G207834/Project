@@ -96,12 +96,12 @@ int Find_Right_Down_Point(int start, int end) // 右下角点，返回值是角�
 /// @param end 终止行
 /// @return 0—未找到角点
 /// @note 从下往上扫
-int Find_Left_Down_Point(int start, int end) // 右下角点，返回值是角点所在的行数
+int Find_Left_Down_Point(int start, int end) // 左下角点，返回值是角点所在的行数
 {
     int i, t;
-    Right_Down_Line = 0;
+    Left_Down_Line = 0;
     if (L_LostLine_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有拐点判断的意义
-        return Right_Down_Line;
+        return Left_Down_Line;
     if (start < end) {
         t     = start;
         start = end;
@@ -114,7 +114,7 @@ int Find_Left_Down_Point(int start, int end) // 右下角点，返回值是角�
     if (end <= 5)
         end = 5;
     for (i = start; i >= end; i--) {
-        if (Right_Down_Line == 0 &&                // 只找第一个符合条件的点
+        if (Left_Down_Line == 0 &&                 // 只找第一个符合条件的点
             abs(L_Line[i] - L_Line[i + 1]) <= 5 && // 角点的阈值可以更改
             abs(L_Line[i + 1] - L_Line[i + 2]) <= 5 &&
             abs(L_Line[i + 2] - L_Line[i + 3]) <= 5 &&
@@ -635,7 +635,7 @@ void Image_Island_Dect()
                 {
                     Find_Left_Down_Point(MT9V03X_H - 1, 50); // 找左下角点
                     /* 判定左环 */
-                    if (L_Line[Left_Down_Line] <= 50 && Left_Down_Line >= MT9V03X_H - 40 && R_LostLine_Time <= 6 && Road_Wide[Left_Down_Line] >= 30) // 限定角点出现的位置
+                    if (L_Line[Left_Down_Line] <= 50 && Left_Down_Line >= MT9V03X_H - 40 && R_LostLine_Time <= 8 && Road_Wide[Left_Down_Line] >= 30) // 限定角点出现的位置
                     {
                         Island_Flag_L = 1; // 判断进入环岛
                         Island_State  = 1;
@@ -738,7 +738,7 @@ void Image_Island_Dect()
                     Right_Add_Line(Island_State3_Point[1], Island_State3_Point[0], R_Line[119], MT9V03X_H - 1);
                     // Left_Add_Line(Island_State3_Point[1], Island_State3_Point[0], L_Line[110], MT9V03X_H - 11);
                 }
-                if ((Island_State3_Point[0] >= MT9V03X_H - 20 || Island_State3_Point[1] >= MT9V03X_H - 1 - 23) && Island_State3_Point[1] != 0) {
+                if ((Island_State3_Point[0] >= MT9V03X_H - 20 || Island_State3_Point[1] >= MT9V03X_W - 1 - 23) && Island_State3_Point[1] != 0) {
                     Island_State           = 4;
                     Island_State4_StartLie = Island_State3_Point[1];
                     gpio_set_level(BEEP, GPIO_LOW);
@@ -836,7 +836,7 @@ void Image_Island_Dect()
                         Left_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                     }
                 }
-                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[0] >= MT9V03X_W - 40) {
+                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[1] >= MT9V03X_W - 40) {
                     gpio_set_level(BEEP, GPIO_LOW);
                     Island_State  = 0;
                     Island_Flag_R = 0;
@@ -874,7 +874,7 @@ void Image_Island_Dect()
                         Right_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                     }
                 }
-                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[0] <= 40) {
+                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[1] <= 40) {
                     gpio_set_level(BEEP, GPIO_LOW);
                     Island_State  = 0;
                     Island_Flag_L = 0;
