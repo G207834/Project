@@ -116,11 +116,11 @@ int Find_Left_Down_Point(int start, int end) // 左下角点，返回值是角�
     for (i = start; i >= end; i--) {
         if (Left_Down_Line == 0 &&                 // 只找第一个符合条件的点
             abs(L_Line[i] - L_Line[i + 1]) <= 5 && // 角点的阈值可以更改
-            abs(L_Line[i + 1] - L_Line[i + 2]) <= 5 &&
-            abs(L_Line[i + 2] - L_Line[i + 3]) <= 5 &&
+            abs(L_Line[i + 1] - L_Line[i + 2]) <= 8 &&
+            abs(L_Line[i + 2] - L_Line[i + 3]) <= 9 &&
             (L_Line[i] - L_Line[i - 2]) >= 5 &&
-            (L_Line[i] - L_Line[i - 3]) >= 10 &&
-            (L_Line[i] - L_Line[i - 4]) >= 10) {
+            (L_Line[i] - L_Line[i - 3]) >= 8 &&
+            (L_Line[i] - L_Line[i - 4]) >= 8) {
             Left_Down_Line = i; // 获取行数即可
             break;
         }
@@ -194,11 +194,11 @@ void Continuity_Change_L(int start_hang, int end_hang)
         end_hang   = t;
     }
     for (i = start_hang; i >= end_hang; i--) {
-        if (abs(R_Line[i] - R_Line[i - 1]) >= 5) // 连续性阈值是5，可更改
+        if (abs(R_Line[i] - R_Line[i - 1]) >= 6) // 连续性阈值是5，可更改
         {
             Continuity_Change_Flag_R = i;
         }
-        if (abs(L_Line[i] - L_Line[i - 1]) >= 15) // 连续性阈值是5，可更改
+        if (abs(L_Line[i] - L_Line[i - 1]) >= 12) // 连续性阈值是5，可更改
         {
             Continuity_Change_Flag_L = i;
         }
@@ -212,7 +212,7 @@ int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值
 {
     int i;
     Monotonicity_Change_Line_R = 0;
-    if (R_LostLine_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有单调性判断的意义
+    if (R_LostLine_Time >= 0.8 * MT9V03X_H) // 大部分都丢线，没有单调性判断的意义
         return Monotonicity_Change_Line_R;
     if (start >= MT9V03X_H - 1 - 5) // 数组越界保护
         start = MT9V03X_H - 1 - 5;
@@ -631,11 +631,11 @@ void Image_Island_Dect()
             }
             if (Island_Flag_L == 0) {
                 Continuity_Change_L(MT9V03X_H - 10, 50);
-                if (Continuity_Change_Flag_L != 0 && Continuity_Change_Flag_R == 0 && Both_LostLine_Time < 5 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
+                if (Continuity_Change_Flag_L != 0 && Continuity_Change_Flag_R == 0 && Both_LostLine_Time < 8 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
                 {
                     Find_Left_Down_Point(MT9V03X_H - 1, 50); // 找左下角点
                     /* 判定左环 */
-                    if (L_Line[Left_Down_Line] <= 50 && Left_Down_Line >= MT9V03X_H - 40 && R_LostLine_Time <= 8 && Road_Wide[Left_Down_Line] >= 30) // 限定角点出现的位置
+                    if (L_Line[Left_Down_Line] <= 55 && Left_Down_Line >= MT9V03X_H - 45 && R_LostLine_Time <= 8 && Road_Wide[Left_Down_Line] >= 23) // 限定角点出现的位置
                     {
                         Island_Flag_L = 1; // 判断进入环岛
                         Island_State  = 1;
@@ -785,14 +785,14 @@ void Image_Island_Dect()
                     }
                 }
             } else {
-                Monotonicity_Change_Right(MT9V03X_H - 10, 40);
+                Monotonicity_Change_Right(MT9V03X_H - 10, 60);
                 /* ips200_show_int(200, 210, L_Line[Monotonicity_Change_Line_L], 3);
                 ips200_show_int(240, 210, Monotonicity_Change_Line_L, 3); */
                 /* Left_Add_Line(L_Line[Monotonicity_Change_Line_L], Monotonicity_Change_Line_L, 141, (White_Lie[MT9V03X_W - 1][2] + White_Lie[141][2]) / 2); */
                 // if (Monotonicity_Change_Line_L != 0 && Both_LostLine_Time > 8) {
                 if (Monotonicity_Change_Line_R != 0) {
                     Right_Add_Line(R_Line[Monotonicity_Change_Line_R], Monotonicity_Change_Line_R, 0, 0);
-                    if ((Monotonicity_Change_Line_R <= MT9V03X_H - 25 || R_Line[Monotonicity_Change_Line_R] <= 25) && Road_Wide[Monotonicity_Change_Line_R] >= 2) {
+                    if ((Monotonicity_Change_Line_R >= MT9V03X_H - 25 || R_Line[Monotonicity_Change_Line_R] >= MT9V03X_W-25) && Road_Wide[Monotonicity_Change_Line_R] >= 2) {
                         Island_State = 6;
                         gpio_set_level(BEEP, GPIO_HIGH);
                         if (Island_Number == 1) {
@@ -849,10 +849,10 @@ void Image_Island_Dect()
                 /* 只在可以安全访问 lie-5..lie+4 范围的列中查找角点 */
                 /* 离角点远的时候右边基本是直的，改变右边的巡线阈值，可以提升远端的角点判断 */
                 for (lie = MT9V03X_W - 40; lie >= 11; lie--) {
-                    if (White_Lie[lie][2] > 20 && White_Lie[lie][0] >= 20 &&
-                        White_Lie[lie][2] - White_Lie[lie + 9][2] >= 1 &&
-                        White_Lie[lie][2] - White_Lie[lie + 10][2] >= 2 &&
-                        White_Lie[lie][2] - White_Lie[lie + 11][2] >= 3 &&
+                    if (White_Lie[lie][2] > 30 && White_Lie[lie][0] >= 30 &&
+                        White_Lie[lie][2] - White_Lie[lie + 9][2] >= 4 &&
+                        White_Lie[lie][2] - White_Lie[lie + 10][2] >= 5 &&
+                        White_Lie[lie][2] - White_Lie[lie + 11][2] >= 6 &&
                         White_Lie[lie][2] - White_Lie[lie - 7][2] >= -2 &&
                         White_Lie[lie][2] - White_Lie[lie - 9][2] >= -2 &&
                         White_Lie[lie][2] - White_Lie[lie - 10][2] >= -2) {
@@ -874,7 +874,7 @@ void Image_Island_Dect()
                         Right_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                     }
                 }
-                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[1] <= 40) {
+                if (Island_State3_Point[0] > MT9V03X_H - 33) {
                     gpio_set_level(BEEP, GPIO_LOW);
                     Island_State  = 0;
                     Island_Flag_L = 0;
