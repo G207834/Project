@@ -296,13 +296,13 @@ int main(void)
                 //  Set_Motor_PWM(1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]), 1700 - 2.3 * (MT9V03X_H - Longest_WhiteLie_L[0]));
                 if(Island_State!=0&&Island_Number==1)
                 {
-                    PID_Servo.Kp = 2.35;
+                    PID_Servo.Kp = 2.4;
                 }
                 else
                 {
                     //0.00305   2.3        0.0068         
-                    //2.55   0.0068
-                    PID_Servo.Kp = 2.55 + 0.0072 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0); 
+                    //2.55   0.0068 0.0072
+                    PID_Servo.Kp = 2.65 + 0.0075 * (MT9V03X_H - (Longest_WhiteLie_L[0] + Longest_WhiteLie_R[0]) / 2.0); 
                     
                     // if(Island_State==3)
                     // {
@@ -374,12 +374,7 @@ void pit_handler(void)
             // 1.5 2 1.2 2  0.8 2.3
             //0.3  0.2       
             //0.6  2.35  0.6  2.5
-                if(Island_Number==1&&Island_State!=0)
-                {
-                    // Diff_Motor_Control(350 - (0.3 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.5, 2.38);
-                     Diff_Motor_Control(340,0,0);
-                }
-                else if(Straight_Flag)
+                if(Straight_Flag)
                 {
                     Diff_Motor_Control(450,0,0);
 
@@ -394,7 +389,7 @@ void pit_handler(void)
                     //0.58  2.5
                     // Diff_Motor_Control(330 - (0.1 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.55, 2.50);
                     //0.039 0.059   0.043 0.058
-                    Diff_Motor_Control(375 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.045,0.058);
+                    Diff_Motor_Control(375 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.039,0.059);
                     // Diff_Motor_Control(360 - (0 * (MT9V03X_H - Longest_WhiteLie_R[0])), 0.45, 2.3);
                     // Diff_Motor_Control(330,0,0);
                 }
