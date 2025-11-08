@@ -159,9 +159,7 @@ int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值
             break;
         }
     }
-    
 }
-
 
 /// @brief 左边界单调性突变检测
 /// @param start 起始行
@@ -411,11 +409,11 @@ void Image_Island_Dect()
         Continuity_Change(MT9V03X_H - 10, 50); // 判断赛道连续性
         if (Island_State == 0) {
             if (Island_Flag_R == 0) {
-                if (Continuity_Change_Flag_R != 0 && Continuity_Change_Flag_L == 0 && Both_LostLine_Time < 5     && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
+                if (Continuity_Change_Flag_R != 0 && Continuity_Change_Flag_L == 0 && Both_LostLine_Time < 5 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
                 {
                     Find_Right_Down_Point(MT9V03X_H - 1, 50); // 找右下角点
                     /* 判定右环 */
-                    if (R_Line[Right_Down_Line]>=MT9V03X_W-50&&Right_Down_Line >= MT9V03X_H - 40 && L_LostLine_Time <= 6 && Road_Wide[Right_Down_Line] >= 30) // 限定角点出现的位置
+                    if (R_Line[Right_Down_Line] >= MT9V03X_W - 50 && Right_Down_Line >= MT9V03X_H - 40 && L_LostLine_Time <= 6 && Road_Wide[Right_Down_Line] >= 30) // 限定角点出现的位置
                     {
                         Island_Flag_R = 1; // 判断进入环岛
                         Island_State  = 1;
@@ -470,25 +468,20 @@ void Image_Island_Dect()
                 Island_State           = 4;
                 Island_State4_StartLie = Island_State3_Point[1];
                 gpio_set_level(BEEP, GPIO_LOW);
-            }
-            else {
-                if(Island_State3_Point[0]==0&&Island_State3_Point[1]==0)
-                {
-                    if(Boundry_Start_L>MT9V03X_H-18&&Search_Stop_Line<=MT9V03X_H-23)
-                    {
+            } else {
+                if (Island_State3_Point[0] == 0 && Island_State3_Point[1] == 0) {
+                    if (Boundry_Start_L > MT9V03X_H - 18 && Search_Stop_Line <= MT9V03X_H - 23) {
                         for (lie = 10; lie <= 55; lie++) {
-                        if (White_Lie[lie][2] >= 30 && White_Lie[lie][1] >= MT9V03X_H - 8 && (White_Lie[lie][2] - White_Lie[lie + 3][2] >= 0&&White_Lie[lie][2] - White_Lie[lie + 10][2]<25)) {
-                            Island_3to4_Count++;
+                            if (White_Lie[lie][2] >= 30 && White_Lie[lie][1] >= MT9V03X_H - 8 && (White_Lie[lie][2] - White_Lie[lie + 3][2] >= 0 && White_Lie[lie][2] - White_Lie[lie + 10][2] < 25)) {
+                                Island_3to4_Count++;
+                            }
+                        }
+                        if (Island_3to4_Count >= 15) {
+                            Island_State           = 4;
+                            Island_State4_StartLie = 70;
+                            gpio_set_level(BEEP, GPIO_LOW);
                         }
                     }
-                    if (Island_3to4_Count >= 15) {
-                        Island_State           = 4;
-                        Island_State4_StartLie = 70;
-                        gpio_set_level(BEEP, GPIO_LOW);
-                    }
-
-                }
-
                 }
             }
         } else if (Island_State == 4) {
@@ -546,7 +539,7 @@ void Image_Island_Dect()
                     Left_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                 }
             }
-            if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[0] >= MT9V03X_W - 40) {
+            if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[1] >= MT9V03X_W - 40) {
                 gpio_set_level(BEEP, GPIO_LOW);
                 Island_State  = 0;
                 Island_Flag_R = 0;
@@ -567,4 +560,3 @@ void Image_Island_Dect()
          ips200_show_int(80, 210, Island_Flag_R, 2); */
     }
 }
-
