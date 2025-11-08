@@ -128,11 +128,11 @@ int Find_Left_Down_Point(int start, int end) // 右下角点，返回值是角�
     return Left_Down_Line;
 }
 
-/// @brief 左右赛道连续性检测
+/// @brief 右环时左右赛道连续性检测
 /// @param start_hang  起始行
 /// @param end_hang 终止行
 ///  @note 连续性的阈值设置为5，可更改
-void Continuity_Change(int start_hang, int end_hang)
+void Continuity_Change_R(int start_hang, int end_hang)
 {
     int i;
     int t;
@@ -154,6 +154,47 @@ void Continuity_Change(int start_hang, int end_hang)
     }
     for (i = start_hang; i >= end_hang; i--) {
         if (abs(R_Line[i] - R_Line[i - 1]) >= 15) // 连续性阈值是5，可更改
+        {
+            Continuity_Change_Flag_R = i;
+        }
+        if (abs(L_Line[i] - L_Line[i - 1]) >= 5) // 连续性阈值是5，可更改
+        {
+            Continuity_Change_Flag_L = i;
+        }
+    }
+}
+
+/// @brief 左环时左右赛道连续性检测
+/// @param start_hang  起始行
+/// @param end_hang 终止行
+///  @note 连续性的阈值设置为5，可更改
+void Continuity_Change_L(int start_hang, int end_hang)
+{
+    int i;
+    int t;
+    /* 标志位清零 */
+    Continuity_Change_Flag_L = 0;
+    Continuity_Change_Flag_R = 0;
+    /* 删去了丢图判断 */
+    if (start_hang >= MT9V03X_H - 5) // 数组越界保护
+    {
+        start_hang = MT9V03X_H - 5;
+    }
+    if (end_hang <= 5) {
+        end_hang = 5;
+    }
+
+    if (end_hang <= MT9V03X_H - Search_Stop_Line) {
+        end_hang = MT9V03X_H - Search_Stop_Line;
+    }
+    if (start_hang < end_hang) // 都是从下往上计算的，反了就互换一下
+    {
+        t          = start_hang;
+        start_hang = end_hang;
+        end_hang   = t;
+    }
+    for (i = start_hang; i >= end_hang; i--) {
+        if (abs(R_Line[i] - R_Line[i - 1]) >= 5) // 连续性阈值是5，可更改
         {
             Continuity_Change_Flag_R = i;
         }
@@ -179,8 +220,9 @@ int Monotonicity_Change_Right(int start, int end) // 单调性改变，返回值
         end = 5;
     if (end <= MT9V03X_H - Search_Stop_Line)
         end = MT9V03X_H - Search_Stop_Line;
-    if (start <= end)
+    if (start <= end) {
         return Monotonicity_Change_Line_R;
+    }
     for (i = start; i >= end; i--) // 会读取前5后5数据，所以前面对输入范围有要求
     {
         if (R_Line[i] == R_Line[i + 5] && R_Line[i] == R_Line[i - 5] &&
@@ -413,15 +455,14 @@ void Island_State_3_Search_Line()
         }
     }
 
-    if(Island_Flag_R)
-    {
+    if (Island_Flag_R) {
         /* 找右找角点 */
         Island_State3_Point[0] = 0;
         Island_State3_Point[1] = 0;
         /* 只在可以安全访问 lie-5..lie+4 范围的列中查找角点 */
         /* 离角点远的时候右边基本是直的，改变右边的巡线阈值，可以提升远端的角点判断 */
         for (lie = 10; lie <= MT9V03X_W - 10; lie++) {
-            /* if (White_Lie[lie][2] > 30 && White_Lie[lie][0] >= 20 &&
+            /* if(White_Lie[lie][2] > 30 && White_Lie[lie][0] >= 20 &&
                 White_Lie[lie][2] - White_Lie[lie - 5][2] >= 4 &&
                 White_Lie[lie][2] - White_Lie[lie - 6][2] >= 5 &&
                 White_Lie[lie][2] - White_Lie[lie - 8][2] >= 6 &&
@@ -441,8 +482,8 @@ void Island_State_3_Search_Line()
                 White_Lie[lie][2] - White_Lie[lie + 9][2] >= -2) {
                 Island_State3_Point[0] = White_Lie[lie][2];
                 Island_State3_Point[1] = lie;
-                /* Point_Flag             = Island_State3_Point[0];
-                Point_Flag1            = Island_State3_Point[1]; */
+                /* Point_Flag= Island_State3_Point[0];
+                Point_Flag1=Island_State3_Point[1]; */
                 break;
             }
         }
@@ -469,10 +510,8 @@ void Island_State_3_Search_Line()
                 }
             }
         }
-    }
-    else
-    {
-        /* 找右找角点 */
+    } else {
+        /* 找左找角点 */
         Island_State3_Point[0] = 0;
         Island_State3_Point[1] = 0;
         /* 只在可以安全访问 lie-5..lie+4 范围的列中查找角点 */
@@ -517,7 +556,7 @@ void Island_State_3_Search_Line()
                 }
             }
         } else {
-            for (lie = MT9V03X_W-1-35; lie >=10; lie--) {
+            for (lie = MT9V03X_W - 1 - 35; lie >= 10; lie--) {
                 if (White_Lie[lie][0] >= Longest_WhiteLie_R[0]) {
                     Longest_WhiteLie_R[0] = White_Lie[lie][0]; // 记录长度
                     Longest_WhiteLie_R[1] = lie;               // 记录下标
@@ -566,19 +605,20 @@ void Island_State_3_Search_Line()
 /// @brief 环岛判断
 void Image_Island_Dect()
 {
+    int Island_3to4_Count = 0;
     if (Cross_Flag == 0) {
         int lie = 0;
         if (Island_State == 3) {
             Island_State_3_Search_Line();
         }
-        Continuity_Change(MT9V03X_H - 15, 30); // 判断赛道连续性
         if (Island_State == 0) {
             if (Island_Flag_R == 0) {
-                if (Continuity_Change_Flag_R != 0 && Continuity_Change_Flag_L == 0 && Both_LostLine_Time < 8 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
+                Continuity_Change_R(MT9V03X_H - 10, 50);                                                                               // 判断赛道连续性
+                if (Continuity_Change_Flag_R != 0 && Continuity_Change_Flag_L == 0 && Both_LostLine_Time < 5 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
                 {
                     Find_Right_Down_Point(MT9V03X_H - 1, 50); // 找右下角点
                     /* 判定右环 */
-                    if (Right_Down_Line >= MT9V03X_H - 50 && L_LostLine_Time <= 5 && Road_Wide[Right_Down_Line] >= 10) // 限定角点出现的位置
+                    if (R_Line[Right_Down_Line] >= MT9V03X_W - 50 && Right_Down_Line >= MT9V03X_H - 40 && L_LostLine_Time <= 6 && Road_Wide[Right_Down_Line] >= 30) // 限定角点出现的位置
                     {
                         Island_Flag_R = 1; // 判断进入环岛
                         Island_State  = 1;
@@ -590,11 +630,12 @@ void Image_Island_Dect()
                 }
             }
             if (Island_Flag_L == 0) {
-                if (Continuity_Change_Flag_L = !0 && Continuity_Change_Flag_R == 0 && Both_LostLine_Time < 8 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
+                Continuity_Change_L(MT9V03X_H - 10, 50);
+                if (Continuity_Change_Flag_L != 0 && Continuity_Change_Flag_R == 0 && Both_LostLine_Time < 5 && Search_Stop_Line > 99) // 如果满足右边线撕裂，左边线连续，丢线数小于阈值，视野足够远
                 {
                     Find_Left_Down_Point(MT9V03X_H - 1, 50); // 找左下角点
                     /* 判定左环 */
-                    if (Left_Down_Line >= MT9V03X_H - 50 && R_LostLine_Time <= 5 && Road_Wide[Left_Down_Line] >= 10) // 限定角点出现的位置
+                    if (L_Line[Left_Down_Line] <= 50 && Left_Down_Line >= MT9V03X_H - 40 && R_LostLine_Time <= 6 && Road_Wide[Left_Down_Line] >= 30) // 限定角点出现的位置
                     {
                         Island_Flag_L = 1; // 判断进入环岛
                         Island_State  = 1;
@@ -635,8 +676,7 @@ void Image_Island_Dect()
             }
         } else if (Island_State == 2) // 判断进入环岛后,右下方边界消失
         {
-            if(Island_Flag_R)
-            {
+            if (Island_Flag_R) {
                 Monotonicity_Change_Right(MT9V03X_H - 8, 30);
                 if (Monotonicity_Change_Line_R != 0) {
                     /* 下面是连点补线 */
@@ -649,9 +689,7 @@ void Image_Island_Dect()
                     Island_State = 3;
                     gpio_set_level(BEEP, GPIO_HIGH);
                 }
-            }
-            else
-            {
+            } else {
                 Monotonicity_Change_Left(MT9V03X_H - 8, 30);
                 if (Monotonicity_Change_Line_L != 0) {
                     Island_Add_Line_L(Monotonicity_Change_Line_L, MT9V03X_H - 1, R_Line_K(Monotonicity_Change_Line_L)); // 直接拉到最底部
@@ -663,8 +701,7 @@ void Image_Island_Dect()
                 }
             }
         } else if (Island_State == 3) {
-            if(Island_Flag_R)
-            {
+            if (Island_Flag_R) {
                 /* 仅在找到有效的角点时才补线，避免使用未初始化或无效点 */
                 if (Island_State3_Point[0] != 0 && Island_State3_Point[1] != 0) {
                     /* 调用 Left_Add_Line(x1=col, y1=row, x2=col2, y2=row2)
@@ -673,15 +710,27 @@ void Image_Island_Dect()
                     Left_Add_Line(Island_State3_Point[1], Island_State3_Point[0], L_Line[119], MT9V03X_H - 1);
                     // Left_Add_Line(Island_State3_Point[1], Island_State3_Point[0], L_Line[110], MT9V03X_H - 11);
                 }
-                if ((Island_State3_Point[0] >= MT9V03X_H - 25 || Island_State3_Point[1] <= 40) && Island_State3_Point[1] != 0) {
+                if ((Island_State3_Point[0] >= MT9V03X_H - 20 || Island_State3_Point[1] <= 23) && Island_State3_Point[1] != 0) {
                     Island_State           = 4;
                     Island_State4_StartLie = Island_State3_Point[1];
                     gpio_set_level(BEEP, GPIO_LOW);
+                } else {
+                    if (Island_State3_Point[0] == 0 && Island_State3_Point[1] == 0) {
+                        if (Boundry_Start_L > MT9V03X_H - 18 && Search_Stop_Line <= MT9V03X_H - 23) {
+                            for (lie = 10; lie <= 55; lie++) {
+                                if (White_Lie[lie][2] >= 30 && White_Lie[lie][1] >= MT9V03X_H - 8 && (White_Lie[lie][2] - White_Lie[lie + 3][2] >= 0 && White_Lie[lie][2] - White_Lie[lie + 10][2] < 25)) {
+                                    Island_3to4_Count++;
+                                }
+                            }
+                            if (Island_3to4_Count >= 15) {
+                                Island_State           = 4;
+                                Island_State4_StartLie = 70;
+                                gpio_set_level(BEEP, GPIO_LOW);
+                            }
+                        }
+                    }
                 }
-            }
-            else
-            {
-                /* 仅在找到有效的角点时才补线，避免使用未初始化或无效点 */
+            } else {
                 if (Island_State3_Point[0] != 0 && Island_State3_Point[1] != 0) {
                     /* 调用 Left_Add_Line(x1=col, y1=row, x2=col2, y2=row2)
                        这里将右下角点与图像底部（同列）连线作为左边界近似：
@@ -689,32 +738,28 @@ void Image_Island_Dect()
                     Right_Add_Line(Island_State3_Point[1], Island_State3_Point[0], R_Line[119], MT9V03X_H - 1);
                     // Left_Add_Line(Island_State3_Point[1], Island_State3_Point[0], L_Line[110], MT9V03X_H - 11);
                 }
-                if ((Island_State3_Point[0] >= MT9V03X_H - 25 || Island_State3_Point[1] >= MT9V03X_W-1-40) && Island_State3_Point[1] != 0) {
+                if ((Island_State3_Point[0] >= MT9V03X_H - 20 || Island_State3_Point[1] >= MT9V03X_H - 1 - 23) && Island_State3_Point[1] != 0) {
                     Island_State           = 4;
                     Island_State4_StartLie = Island_State3_Point[1];
                     gpio_set_level(BEEP, GPIO_LOW);
-                }
-                else {
-                    if(Island_State3_Point[0]==0&&Island_State3_Point[1]==0)
-                    {
-                        if(Boundry_Start_L>MT9V03X_H-20)
-                        {
-                            for (lie = 25; lie <= 35; lie++) {
-                            if (White_Lie[lie][2] < 50 && White_Lie[lie][1] >= MT9V03X_H - 5 && (White_Lie[lie][2] - White_Lie[lie + 2][2] > 0&&White_Lie[lie][2] - White_Lie[lie + 10][2]<18)) {
-                                Island_3to4_Count++;
+                } else {
+                    if (Island_State3_Point[0] == 0 && Island_State3_Point[1] == 0) {
+                        if (Boundry_Start_R > MT9V03X_H - 18 && Search_Stop_Line <= MT9V03X_H - 23) {
+                            for (lie = MT9V03X_W - 1 - 10; lie >= MT9V03X_W - 1 - 55; lie--) {
+                                if (White_Lie[lie][2] >= 30 && White_Lie[lie][1] >= MT9V03X_H - 8 && (White_Lie[lie][2] - White_Lie[lie - 3][2] >= 0 && White_Lie[lie][2] - White_Lie[lie - 10][2] < 25)) {
+                                    Island_3to4_Count++;
+                                }
+                            }
+                            if (Island_3to4_Count >= 15) {
+                                Island_State           = 4;
+                                Island_State4_StartLie = 70;
+                                gpio_set_level(BEEP, GPIO_LOW);
                             }
                         }
-                        if (Island_3to4_Count >= 6) {
-                            Island_State           = 4;
-                            Island_State4_StartLie = 70;
-                            gpio_set_level(BEEP, GPIO_LOW);
-                        }
-
-                        }
-
                     }
                 }
             }
+
         } else if (Island_State == 4) {
             Island_State = 5;
             /* if(陀螺仪)
@@ -722,8 +767,7 @@ void Image_Island_Dect()
                 Island_State = 5;
             } */
         } else if (Island_State == 5) {
-            if(Island_Flag_R)
-            {
+            if (Island_Flag_R) {
                 Monotonicity_Change_Left(MT9V03X_H - 10, 40);
                 /* ips200_show_int(200, 210, L_Line[Monotonicity_Change_Line_L], 3);
                 ips200_show_int(240, 210, Monotonicity_Change_Line_L, 3); */
@@ -740,9 +784,7 @@ void Image_Island_Dect()
                         }
                     }
                 }
-            }
-            else
-            {
+            } else {
                 Monotonicity_Change_Right(MT9V03X_H - 10, 40);
                 /* ips200_show_int(200, 210, L_Line[Monotonicity_Change_Line_L], 3);
                 ips200_show_int(240, 210, Monotonicity_Change_Line_L, 3); */
@@ -760,10 +802,9 @@ void Image_Island_Dect()
                     }
                 }
             }
-            
+
         } else if (Island_State == 6) {
-            if(Island_Flag_R)
-            {
+            if (Island_Flag_R) {
                 /* 找右找角点 */
                 Island_State3_Point[0] = 0;
                 Island_State3_Point[1] = 0;
@@ -801,15 +842,13 @@ void Image_Island_Dect()
                     Island_Flag_R = 0;
                     Island_Number++;
                 }
-            }
-            else
-            {
+            } else {
                 /* 找左找角点 */
                 Island_State3_Point[0] = 0;
                 Island_State3_Point[1] = 0;
                 /* 只在可以安全访问 lie-5..lie+4 范围的列中查找角点 */
                 /* 离角点远的时候右边基本是直的，改变右边的巡线阈值，可以提升远端的角点判断 */
-                for (lie = MT9V03X_W-40; lie >= 11; lie--) {
+                for (lie = MT9V03X_W - 40; lie >= 11; lie--) {
                     if (White_Lie[lie][2] > 20 && White_Lie[lie][0] >= 20 &&
                         White_Lie[lie][2] - White_Lie[lie + 9][2] >= 1 &&
                         White_Lie[lie][2] - White_Lie[lie + 10][2] >= 2 &&
@@ -835,25 +874,13 @@ void Image_Island_Dect()
                         Right_Add_Line(94, White_Lie[94][2], Island_Out_Point[1], Island_Out_Point[0]);
                     }
                 }
-                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[0] <=40) {
+                if (Island_State3_Point[0] > MT9V03X_H - 33 || Island_State3_Point[0] <= 40) {
                     gpio_set_level(BEEP, GPIO_LOW);
                     Island_State  = 0;
                     Island_Flag_L = 0;
                     Island_Number++;
                 }
             }
-            /* ips200_show_int(200, 210, Island_State3_Point[1], 3);
-            ips200_show_int(240, 210, Island_State3_Point[0], 3); */
         }
-        /*  key_scanner();
-         if (key_get_state(KEY_1) == KEY_SHORT_PRESS) {
-             Island_State  = 0;
-             Island_Flag_R = 0;
-         }
-         if (key_get_state(KEY_2) == KEY_SHORT_PRESS) {
-             Island_State = 5;
-         }
-         ips200_show_int(40, 210, Island_State, 2);
-         ips200_show_int(80, 210, Island_Flag_R, 2); */
     }
 }
